@@ -182,6 +182,10 @@ select.input{cursor:pointer}
 .cal-summary{display:flex;gap:16px;margin-top:12px;justify-content:center}
 .cal-summary-item{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
 .cal-summary-dot{width:10px;height:10px;border-radius:3px}
+/* CONFETTI */
+.confetti-wrap{position:fixed;inset:0;pointer-events:none;z-index:999;overflow:hidden}
+.confetti-piece{position:absolute;width:10px;height:10px;top:-20px;animation:confettiFall 1.8s ease-out forwards}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg) scale(1);opacity:1}100%{transform:translateY(100vh) rotate(720deg) scale(0.3);opacity:0}}
 </style>
 </head>
 <body>
@@ -204,7 +208,7 @@ select.input{cursor:pointer}
 <div class="screen active" id="screen-home">
   <div class="page-header">
     <div class="page-tag">Edzésnapló</div>
-    <div class="page-title">Üdv, Gyula! 👋</div>
+    <div class="page-title" id="home-greeting">Üdv, Gyula! 👋</div>
     <div class="page-sub" id="home-streak"></div>
   </div>
   <div class="today-card">
@@ -213,10 +217,10 @@ select.input{cursor:pointer}
     <div class="today-sub" id="today-summary">Még nincs mai edzés</div>
   </div>
   <div class="stat-grid">
-    <div class="stat-card"><div class="stat-value stat-accent" id="stat-week">0</div><div class="stat-label">Edzés / hét</div></div>
-    <div class="stat-card"><div class="stat-value" id="stat-total">0</div><div class="stat-label">Összes edzés</div></div>
-    <div class="stat-card"><div class="stat-value" id="stat-maxpr">—</div><div class="stat-label">Max 1RM</div></div>
-    <div class="stat-card"><div class="stat-value" id="stat-pr">0</div><div class="stat-label">PR rekordok</div></div>
+    <div class="stat-card" style="background:linear-gradient(135deg,#161616 0%,#1a1f0a 100%);border-color:rgba(232,255,71,0.12)"><div class="stat-value stat-accent" id="stat-week">0</div><div class="stat-label">Edzés / hét</div></div>
+    <div class="stat-card" style="background:linear-gradient(135deg,#161616 0%,#0f1a1a 100%);border-color:rgba(71,196,255,0.12)"><div class="stat-value" style="color:var(--accent3)" id="stat-total">0</div><div class="stat-label">Összes edzés</div></div>
+    <div class="stat-card" style="background:linear-gradient(135deg,#161616 0%,#1a150a 100%);border-color:rgba(255,215,0,0.12)"><div class="stat-value" style="color:var(--pr)" id="stat-maxpr">—</div><div class="stat-label">Max 1RM</div></div>
+    <div class="stat-card" style="background:linear-gradient(135deg,#161616 0%,#1a0f15 100%);border-color:rgba(255,107,53,0.12)"><div class="stat-value" style="color:var(--accent2)" id="stat-pr">0</div><div class="stat-label">PR rekordok</div></div>
   </div>
   <!-- CALENDAR -->
   <div class="cal-wrap">
@@ -630,7 +634,9 @@ function initDefaults(){
 // ════════════════════════════════════════════════
 // NAVIGATION
 // ════════════════════════════════════════════════
+function haptic(ms){if(navigator.vibrate)navigator.vibrate(ms||10)}
 function switchScreen(name){
+  haptic(8);
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
@@ -696,6 +702,10 @@ function renderCal(){
 }
 function renderHome(){
   const now=new Date();
+  const h=now.getHours();
+  const greet=h<5?'Jó éjt':h<12?'Jó reggelt':h<18?'Szép napot':h<22?'Jó estét':'Jó éjt';
+  const emoji=h<5?'🌙':h<12?'☀️':h<18?'💪':h<22?'🌆':'🌙';
+  document.getElementById('home-greeting').textContent=`${greet}, Gyula! ${emoji}`;
   document.getElementById('today-date').textContent=now.toLocaleDateString('hu-HU',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const ws=DB.workouts, weekAgo=Date.now()-7*864e5;
   document.getElementById('stat-week').textContent=ws.filter(w=>w.date>weekAgo).length;
@@ -717,12 +727,20 @@ function renderHome(){
     :recent.map(w=>workoutCard(w)).join('');
   renderCal();
 }
+const muscleColors={'Mell':'#ff6b35','Hát':'#47c4ff','Váll':'#e8ff47','Bicepsz':'#c864ff','Tricepsz':'#ffc832','Láb':'#50dc78','Has':'#ff5078','Egyéb':'#888'};
+function workoutMuscleColor(w){
+  const freq={};
+  w.exercises.forEach(ex=>{const e=DB.exercises.find(x=>x.id===ex.exerciseId);if(e)freq[e.muscle]=(freq[e.muscle]||0)+1});
+  const top=Object.entries(freq).sort((a,b)=>b[1]-a[1])[0];
+  return top?muscleColors[top[0]]||'#888':'#888';
+}
 function workoutCard(w){
   const date=new Date(w.date).toLocaleDateString('hu-HU',{month:'short',day:'numeric',weekday:'short'});
   const names=w.exercises.map(e=>e.name).join(', ');
   const sets=w.exercises.reduce((a,e)=>a+e.sets.length,0);
   const vol=Math.round(w.exercises.reduce((a,e)=>a+e.sets.reduce((b,s)=>b+(s.weight||0)*(s.reps||0),0),0));
-  return `<div class="history-item" onclick="openWorkoutDetail('${w.id}')">
+  const clr=workoutMuscleColor(w);
+  return `<div class="history-item" onclick="openWorkoutDetail('${w.id}')" style="border-left:3px solid ${clr}">
     <div class="history-date">${date}</div>
     <div class="history-exercises">${names||'—'}</div>
     <div class="history-stats">
@@ -856,10 +874,11 @@ function saveWorkout(){
   if(editingWorkoutId){
     const idx=ws.findIndex(w=>w.id===editingWorkoutId);
     if(idx!==-1){ ws[idx]={...ws[idx],date:wDate,notes:document.getElementById('session-notes').value,exercises:currentExercises.map(ex=>({...ex}))} }
-    DB.workouts=ws; editingWorkoutId=null; showToast('✓ Edzés frissítve!');
+    DB.workouts=ws; editingWorkoutId=null; showToast('✓ Edzés frissítve!'); haptic(15);
   } else {
     ws.push({id:uid(),date:wDate,notes:document.getElementById('session-notes').value,exercises:currentExercises.map(ex=>({...ex}))});
-    DB.workouts=ws; showToast(newPR?'🏆 Új rekord!':'✓ Edzés mentve!');
+    DB.workouts=ws;
+    if(newPR){showToast('🏆 Új 1RM rekord!');celebratePR()}else{showToast('✓ Edzés mentve!');haptic(15)}
   }
   currentExercises=[]; document.getElementById('session-notes').value=''; document.getElementById('session-date').value='';
   renderExerciseBlocks(); setTimeout(()=>switchScreen('history'),600);
@@ -1427,6 +1446,19 @@ function doReset(){
 function openModal(id){ document.getElementById(id).classList.add('open') }
 function closeModal(id){ document.getElementById(id).classList.remove('open') }
 function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500) }
+function celebratePR(){
+  const colors=['#e8ff47','#ffd700','#ff6b35','#47c4ff','#c864ff','#50dc78','#ff5078'];
+  const wrap=document.createElement('div');wrap.className='confetti-wrap';document.body.appendChild(wrap);
+  for(let i=0;i<40;i++){
+    const p=document.createElement('div');p.className='confetti-piece';
+    const c=colors[Math.floor(Math.random()*colors.length)];
+    const shapes=['50%','2px','0'];const br=shapes[Math.floor(Math.random()*3)];
+    Object.assign(p.style,{left:Math.random()*100+'%',background:c,borderRadius:br,width:(6+Math.random()*8)+'px',height:(6+Math.random()*8)+'px',animationDelay:(Math.random()*0.6)+'s',animationDuration:(1.2+Math.random()*1)+'s'});
+    wrap.appendChild(p);
+  }
+  if(navigator.vibrate)navigator.vibrate([50,30,100]);
+  setTimeout(()=>wrap.remove(),3000);
+}
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open') }));
 
 // ════════════════════════════════════════════════
