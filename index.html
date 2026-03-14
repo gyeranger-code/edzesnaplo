@@ -215,7 +215,7 @@ select.input{cursor:pointer}
   <div class="stat-grid">
     <div class="stat-card"><div class="stat-value stat-accent" id="stat-week">0</div><div class="stat-label">Edzés / hét</div></div>
     <div class="stat-card"><div class="stat-value" id="stat-total">0</div><div class="stat-label">Összes edzés</div></div>
-    <div class="stat-card"><div class="stat-value" id="stat-maxpr">—</div><div class="stat-label">Max PR (kg)</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-maxpr">—</div><div class="stat-label">Max 1RM</div></div>
     <div class="stat-card"><div class="stat-value" id="stat-pr">0</div><div class="stat-label">PR rekordok</div></div>
   </div>
   <!-- CALENDAR -->
@@ -700,8 +700,8 @@ function renderHome(){
   const ws=DB.workouts, weekAgo=Date.now()-7*864e5;
   document.getElementById('stat-week').textContent=ws.filter(w=>w.date>weekAgo).length;
   document.getElementById('stat-total').textContent=ws.length;
-  let maxPR=0;
-  ws.forEach(w=>w.exercises.forEach(e=>e.sets.forEach(s=>{ if((s.weight||0)>maxPR) maxPR=s.weight })));
+  const prVals=Object.values(getPRs());
+  const maxPR=prVals.length?Math.max(...prVals):0;
   document.getElementById('stat-maxpr').textContent=maxPR>0?maxPR+' kg':'—';
   document.getElementById('stat-pr').textContent=Object.keys(getPRs()).length;
   const streak=calcStreak(ws);
@@ -846,8 +846,8 @@ function saveWorkout(){
   if(!currentExercises.length){ showToast('Adj hozzá legalább egy gyakorlatot!'); return }
   const prs=getPRs(); let newPR=false;
   currentExercises.forEach(ex=>{
-    const max=Math.max(...ex.sets.map(s=>s.weight||0));
-    if(max>0&&(!prs[ex.exerciseId]||max>prs[ex.exerciseId])){ prs[ex.exerciseId]=max; newPR=true }
+    const est1RM=bestEpley(ex.sets);
+    if(est1RM>0&&(!prs[ex.exerciseId]||est1RM>prs[ex.exerciseId])){ prs[ex.exerciseId]=est1RM; newPR=true }
   });
   localStorage.setItem('prs',JSON.stringify(prs));
   const dateVal=document.getElementById('session-date').value;
@@ -981,8 +981,8 @@ function openWorkoutDetail(id){
   let html=`<div class="modal-title">${date}</div>`;
   if(w.notes) html+=`<div style="font-size:13px;color:var(--muted);margin-bottom:14px;font-style:italic">"${w.notes}"</div>`;
   w.exercises.forEach(ex=>{
-    const maxW=Math.max(...ex.sets.map(s=>s.weight||0));
-    const isPR=prs[ex.exerciseId]===maxW&&maxW>0;
+    const est1RM=bestEpley(ex.sets);
+    const isPR=prs[ex.exerciseId]&&Math.abs(prs[ex.exerciseId]-est1RM)<0.5&&est1RM>0;
     html+=`<div style="margin-bottom:16px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
         <div style="font-family:Syne,sans-serif;font-size:15px;font-weight:700">${ex.name}</div>
@@ -1134,7 +1134,7 @@ function renderProgressDetail(stat){
       <div style="font-family:Syne,sans-serif;font-size:18px;font-weight:800;margin-bottom:14px;color:var(--accent)">${stat.ex.name}</div>
     </div>
     <div class="stat-grid" style="padding:0 16px;margin-bottom:12px">
-      <div class="stat-card"><div class="stat-value stat-accent">${prV} kg</div><div class="stat-label">Max PR</div></div>
+      <div class="stat-card"><div class="stat-value stat-accent">${prV} kg</div><div class="stat-label">Max 1RM</div></div>
       <div class="stat-card"><div class="stat-value" style="color:${impr>=0?'var(--safe)':'var(--danger)'}">${impr>=0?'+':''}${impr}%</div><div class="stat-label">1RM fejlődés</div></div>
       <div class="stat-card"><div class="stat-value">${data.length}</div><div class="stat-label">Edzések</div></div>
       <div class="stat-card"><div class="stat-value">${last.best1RM} kg</div><div class="stat-label">Utolsó 1RM</div></div>
@@ -1433,6 +1433,15 @@ document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click
 // INIT
 // ════════════════════════════════════════════════
 initDefaults();
+if(!localStorage.getItem('prs_v2_migrated')){
+  const prs={};
+  DB.workouts.forEach(w=>w.exercises.forEach(ex=>{
+    const est=bestEpley(ex.sets);
+    if(est>0&&(!prs[ex.exerciseId]||est>prs[ex.exerciseId])) prs[ex.exerciseId]=est;
+  }));
+  localStorage.setItem('prs',JSON.stringify(prs));
+  localStorage.setItem('prs_v2_migrated','1');
+}
 renderHome();
 
 if ('serviceWorker' in navigator) {
