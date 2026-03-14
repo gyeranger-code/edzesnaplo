@@ -23,7 +23,7 @@ html,body{width:100%;min-height:100vh;background:var(--bg);color:var(--text);fon
 #app{max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:80px}
 /* NAV */
 #nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(22,22,22,0.96);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
-.nav-item{flex:1;padding:10px 0 8px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:all 0.2s;border:none;background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:9px;font-weight:500;letter-spacing:0.05em;text-transform:uppercase}
+.nav-item{flex:1;padding:10px 0 8px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:all 0.2s;border:none;background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:0.05em;text-transform:uppercase}
 .nav-item.active{color:var(--accent)}
 .nav-item svg{width:20px;height:20px}
 /* SCREENS */
@@ -201,14 +201,14 @@ select.input{cursor:pointer}
     <div class="stat-card"><div class="stat-value" id="stat-maxpr">—</div><div class="stat-label">Max PR (kg)</div></div>
     <div class="stat-card"><div class="stat-value" id="stat-pr">0</div><div class="stat-label">PR rekordok</div></div>
   </div>
-  <div class="section-header"><div class="section-title">Legutóbbi edzések</div></div>
-  <div id="recent-list"></div>
-  <div style="padding:4px 16px 0">
+  <div style="padding:4px 16px 12px">
     <button class="btn btn-primary" onclick="startNewWorkout()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Új edzés indítása
     </button>
   </div>
+  <div class="section-header"><div class="section-title">Legutóbbi edzések</div></div>
+  <div id="recent-list"></div>
 </div>
 
 <!-- LOG -->
@@ -227,13 +227,17 @@ select.input{cursor:pointer}
       <input type="text" class="input" id="session-notes" placeholder="pl. Push nap...">
     </div>
   </div>
-  <!-- REST TIMER QUICK BUTTONS -->
-  <div style="padding:0 16px 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-    <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;font-weight:700">⏱ Pihenő:</span>
-    <button onclick="startTimer(60)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:8px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">1 perc</button>
-    <button onclick="startTimer(90)" style="background:var(--surface2);border:1px solid rgba(232,255,71,0.3);color:var(--accent);padding:7px 12px;border-radius:8px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">1:30</button>
-    <button onclick="startTimer(120)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:8px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">2 perc</button>
-    <button onclick="startTimer(180)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:8px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">3 perc</button>
+  <!-- REST TIMER QUICK BUTTONS (collapsible) -->
+  <div style="padding:0 16px 10px">
+    <button onclick="toggleRestPanel()" id="rest-toggle" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:9px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;width:100%;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s">
+      <span>⏱</span> Pihenőidő <span id="rest-arrow" style="font-size:10px;transition:transform 0.2s">▼</span>
+    </button>
+    <div id="rest-panel" style="display:none;margin-top:8px;display:none;gap:8px;flex-wrap:wrap;justify-content:center">
+      <button onclick="startTimer(60)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 16px;border-radius:8px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">1 perc</button>
+      <button onclick="startTimer(90)" style="background:var(--surface2);border:1px solid rgba(232,255,71,0.3);color:var(--accent);padding:9px 16px;border-radius:8px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600">1:30</button>
+      <button onclick="startTimer(120)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 16px;border-radius:8px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">2 perc</button>
+      <button onclick="startTimer(180)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 16px;border-radius:8px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">3 perc</button>
+    </div>
   </div>
   <div id="exercise-blocks"></div>
   <div style="padding:0 16px;display:flex;flex-direction:column;gap:10px">
@@ -281,6 +285,18 @@ select.input{cursor:pointer}
 <!-- MORE -->
 <div class="screen" id="screen-more">
   <div class="page-header"><div class="page-tag">Egyéb</div><div class="page-title">Több funkció</div></div>
+
+  <!-- Quick links -->
+  <div style="padding:0 16px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <button class="btn btn-secondary" onclick="switchScreen('progress')" style="gap:6px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Progresszió
+    </button>
+    <button class="btn btn-secondary" onclick="switchScreen('templates')" style="gap:6px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Sablonok
+    </button>
+  </div>
 
   <!-- Bodyweight -->
   <div class="section-header"><div class="section-title">⚖️ Testsúly napló</div></div>
@@ -351,12 +367,6 @@ select.input{cursor:pointer}
   </button>
   <button class="nav-item" onclick="switchScreen('history')" id="nav-history">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Előzmény
-  </button>
-  <button class="nav-item" onclick="switchScreen('progress')" id="nav-progress">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Progressz
-  </button>
-  <button class="nav-item" onclick="switchScreen('templates')" id="nav-templates">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Sablonok
   </button>
   <button class="nav-item" onclick="switchScreen('more')" id="nav-more">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>Több
@@ -624,7 +634,7 @@ function renderHome(){
   document.getElementById('today-summary').textContent=todayW.length>0
     ?`${todayW[todayW.length-1].exercises.length} gyakorlat · ${todayW[todayW.length-1].exercises.reduce((a,e)=>a+e.sets.length,0)} sorozat`
     :'Még nincs mai edzés';
-  const recent=[...ws].sort((a,b)=>b.date-a.date).slice(0,5);
+  const recent=[...ws].sort((a,b)=>b.date-a.date).slice(0,3);
   document.getElementById('recent-list').innerHTML=recent.length===0
     ?`<div class="empty-state"><div class="empty-icon">🏋️</div><div class="empty-title">Még nincs edzés</div><div class="empty-sub">Nyomd az "Új edzés indítása" gombot!</div></div>`
     :recent.map(w=>workoutCard(w)).join('');
@@ -675,6 +685,12 @@ function startTimer(s){
       if(navigator.vibrate) navigator.vibrate([300,100,300]);
     }
   },1000);
+}
+function toggleRestPanel(){
+  const p=document.getElementById('rest-panel');
+  const a=document.getElementById('rest-arrow');
+  if(p.style.display==='flex'){p.style.display='none';a.style.transform='rotate(0deg)'}
+  else{p.style.display='flex';a.style.transform='rotate(180deg)'}
 }
 function addRestTime(s){ timerSecs+=s; updateTimerDisplay() }
 function stopTimer(){
@@ -852,9 +868,21 @@ function confirmAddExercise(){
 let selectedWorkoutId=null;
 function renderHistory(){
   const ws=[...DB.workouts].sort((a,b)=>b.date-a.date);
-  document.getElementById('history-list').innerHTML=ws.length===0
-    ?`<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Még nincs edzés</div></div>`
-    :ws.map(w=>workoutCard(w)).join('');
+  if(ws.length===0){
+    document.getElementById('history-list').innerHTML=`<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Még nincs edzés</div></div>`;
+    return;
+  }
+  let html='', lastMonth='';
+  ws.forEach(w=>{
+    const d=new Date(w.date);
+    const month=d.toLocaleDateString('hu-HU',{year:'numeric',month:'long'});
+    if(month!==lastMonth){
+      html+=`<div style="padding:12px 20px 6px;font-family:Syne,sans-serif;font-size:14px;font-weight:700;color:var(--muted);letter-spacing:-0.01em">${month}</div>`;
+      lastMonth=month;
+    }
+    html+=workoutCard(w);
+  });
+  document.getElementById('history-list').innerHTML=html;
 }
 function openWorkoutDetail(id){
   selectedWorkoutId=id;
