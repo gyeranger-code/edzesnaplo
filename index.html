@@ -705,7 +705,7 @@ function renderHome(){
   document.getElementById('stat-maxpr').textContent=maxPR>0?maxPR+' kg':'—';
   document.getElementById('stat-pr').textContent=Object.keys(getPRs()).length;
   const streak=calcStreak(ws);
-  document.getElementById('home-streak').textContent=streak>1?`🔥 ${streak} napos sorozat`:streak===1?'💪 Ma edzettél!':'Kezdj el edzeni!';
+  document.getElementById('home-streak').textContent=getStreakMessage(streak);
   const todayStart=new Date(); todayStart.setHours(0,0,0,0);
   const todayW=ws.filter(w=>w.date>=todayStart.getTime());
   document.getElementById('today-summary').textContent=todayW.length>0
@@ -731,6 +731,17 @@ function workoutCard(w){
       ${w.notes?`<div class="history-stat" style="font-style:italic">"${w.notes}"</div>`:''}
     </div>
   </div>`;
+}
+function getStreakMessage(s){
+  if(s>=30)return `🏆 Legenda! ${s} napos sorozat!`;
+  if(s>=14)return `⚡ Megállíthatatlan! ${s} napos sorozat!`;
+  if(s>=10)return `🔥 Gépezet vagy! ${s} napos sorozat!`;
+  if(s>=7)return `💎 Egy teljes hét! ${s} napos sorozat!`;
+  if(s>=5)return `🚀 Beindultál! ${s} napos sorozat!`;
+  if(s>=3)return `💪 Erős vagy! ${s} napos sorozat!`;
+  if(s===2)return `✌️ Szép, 2 napos sorozat!`;
+  if(s===1)return `💪 Ma edzettél!`;
+  return 'Kezdj el edzeni!';
 }
 function calcStreak(ws){
   const days=new Set(ws.map(w=>new Date(w.date).toDateString()));
