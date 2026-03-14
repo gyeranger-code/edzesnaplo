@@ -165,6 +165,23 @@ select.input{cursor:pointer}
 .chart-wrap{position:relative;height:160px}
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px}
+/* CALENDAR */
+.cal-wrap{margin:0 16px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;overflow:hidden}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-month{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;letter-spacing:-0.01em}
+.cal-nav{background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:14px;transition:all 0.15s}
+.cal-nav:active{background:var(--surface3)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-day-label{font-size:9px;color:var(--muted);text-align:center;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding-bottom:4px}
+.cal-day{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted2);position:relative}
+.cal-day.current-month{color:var(--muted)}
+.cal-day.has-workout{background:rgba(232,255,71,0.15);color:var(--accent);font-weight:700}
+.cal-day.has-workout-2{background:rgba(232,255,71,0.3);color:var(--accent)}
+.cal-day.is-today{border:1.5px solid var(--accent)}
+.cal-day.is-today.has-workout{border-color:var(--accent)}
+.cal-summary{display:flex;gap:16px;margin-top:12px;justify-content:center}
+.cal-summary-item{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.cal-summary-dot{width:10px;height:10px;border-radius:3px}
 </style>
 </head>
 <body>
@@ -200,6 +217,16 @@ select.input{cursor:pointer}
     <div class="stat-card"><div class="stat-value" id="stat-total">0</div><div class="stat-label">Összes edzés</div></div>
     <div class="stat-card"><div class="stat-value" id="stat-maxpr">—</div><div class="stat-label">Max PR (kg)</div></div>
     <div class="stat-card"><div class="stat-value" id="stat-pr">0</div><div class="stat-label">PR rekordok</div></div>
+  </div>
+  <!-- CALENDAR -->
+  <div class="cal-wrap">
+    <div class="cal-header">
+      <button class="cal-nav" onclick="calNav(-1)">◀</button>
+      <div class="cal-month" id="cal-month-label"></div>
+      <button class="cal-nav" onclick="calNav(1)">▶</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-summary" id="cal-summary"></div>
   </div>
   <div style="padding:4px 16px 12px">
     <button class="btn btn-primary" onclick="startNewWorkout()">
@@ -617,6 +644,52 @@ function switchScreen(name){
 // ════════════════════════════════════════════════
 // HOME
 // ════════════════════════════════════════════════
+let calDate=new Date();
+function calNav(dir){calDate.setMonth(calDate.getMonth()+dir);renderCal()}
+function renderCal(){
+  const y=calDate.getFullYear(),m=calDate.getMonth();
+  const label=new Date(y,m).toLocaleDateString('hu-HU',{year:'numeric',month:'long'});
+  document.getElementById('cal-month-label').textContent=label.charAt(0).toUpperCase()+label.slice(1);
+  const first=new Date(y,m,1),last=new Date(y,m+1,0);
+  let startDay=(first.getDay()+6)%7;
+  const days=['H','K','Sz','Cs','P','Sz','V'];
+  let html=days.map(d=>`<div class="cal-day-label">${d}</div>`).join('');
+  const wMap={};
+  DB.workouts.forEach(w=>{
+    const d=new Date(w.date);
+    if(d.getFullYear()===y&&d.getMonth()===m){
+      const key=d.getDate();
+      wMap[key]=(wMap[key]||0)+1;
+    }
+  });
+  const today=new Date();
+  const isCurrentMonth=today.getFullYear()===y&&today.getMonth()===m;
+  const todayDate=today.getDate();
+  for(let i=0;i<startDay;i++){
+    const prev=new Date(y,m,0-startDay+i+1);
+    html+=`<div class="cal-day">${prev.getDate()}</div>`;
+  }
+  let totalWorkouts=0;
+  for(let d=1;d<=last.getDate();d++){
+    const cnt=wMap[d]||0;
+    totalWorkouts+=cnt;
+    let cls='cal-day current-month';
+    if(cnt>=2)cls+=' has-workout has-workout-2';
+    else if(cnt===1)cls+=' has-workout';
+    if(isCurrentMonth&&d===todayDate)cls+=' is-today';
+    html+=`<div class="${cls}">${d}</div>`;
+  }
+  const remaining=7-((startDay+last.getDate())%7);
+  if(remaining<7){
+    for(let i=1;i<=remaining;i++) html+=`<div class="cal-day">${i}</div>`;
+  }
+  document.getElementById('cal-grid').innerHTML=html;
+  const workoutDays=Object.keys(wMap).length;
+  document.getElementById('cal-summary').innerHTML=
+    `<div class="cal-summary-item"><div class="cal-summary-dot" style="background:rgba(232,255,71,0.15);border:1px solid rgba(232,255,71,0.3)"></div>${workoutDays} edzésnap</div>`+
+    `<div class="cal-summary-item"><div class="cal-summary-dot" style="background:rgba(232,255,71,0.3);border:1px solid var(--accent)"></div>2+ edzés/nap</div>`+
+    `<div class="cal-summary-item" style="font-weight:600;color:var(--accent)">${totalWorkouts} edzés</div>`;
+}
 function renderHome(){
   const now=new Date();
   document.getElementById('today-date').textContent=now.toLocaleDateString('hu-HU',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
@@ -638,6 +711,7 @@ function renderHome(){
   document.getElementById('recent-list').innerHTML=recent.length===0
     ?`<div class="empty-state"><div class="empty-icon">🏋️</div><div class="empty-title">Még nincs edzés</div><div class="empty-sub">Nyomd az "Új edzés indítása" gombot!</div></div>`
     :recent.map(w=>workoutCard(w)).join('');
+  renderCal();
 }
 function workoutCard(w){
   const date=new Date(w.date).toLocaleDateString('hu-HU',{month:'short',day:'numeric',weekday:'short'});
