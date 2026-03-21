@@ -27,9 +27,10 @@ html,body{width:100%;min-height:100vh;background:var(--bg);color:var(--text);fon
 .nav-item.active{color:var(--accent)}
 .nav-item svg{width:20px;height:20px}
 /* SCREENS */
-.screen{display:none;animation:fadeIn 0.25s ease}
-.screen.active{display:block}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.screen{display:none}
+.screen.active{display:block;animation:slideIn 0.25s ease}
+@keyframes slideIn{from{opacity:0;transform:translateX(var(--slide-dir,30px))}to{opacity:1;transform:translateX(0)}}
+@keyframes slideOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(calc(var(--slide-dir,30px)*-1))}}
 /* HEADERS */
 .page-header{padding:52px 20px 16px}
 .page-tag{font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
@@ -232,6 +233,8 @@ select.input{cursor:pointer}
     <div class="cal-grid" id="cal-grid"></div>
     <div class="cal-summary" id="cal-summary"></div>
   </div>
+  <!-- MUSCLE HEATMAP -->
+  <div class="cal-wrap" id="muscle-heatmap" style="padding:14px 16px"></div>
   <div style="padding:4px 16px 12px">
     <button class="btn btn-primary" onclick="startNewWorkout()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -640,11 +643,17 @@ function initDefaults(){
 // NAVIGATION
 // ════════════════════════════════════════════════
 function haptic(ms){if(navigator.vibrate)navigator.vibrate(ms||10)}
+const screenOrder={home:0,log:1,history:2,progress:3,templates:3,exercises:3,more:3};
+let currentScreen='home';
 function switchScreen(name){
   haptic(8);
+  const dir=(screenOrder[name]||0)>=(screenOrder[currentScreen]||0)?'30px':'-30px';
+  document.documentElement.style.setProperty('--slide-dir',dir);
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('screen-'+name).classList.add('active');
+  const el=document.getElementById('screen-'+name);
+  el.classList.add('active');
+  currentScreen=name;
   const nav=document.getElementById('nav-'+name);
   if(nav) nav.classList.add('active');
   if(name==='home') renderHome();
@@ -731,8 +740,42 @@ function renderHome(){
     ?`<div class="empty-state"><div class="empty-icon">🏋️</div><div class="empty-title">Még nincs edzés</div><div class="empty-sub">Nyomd az "Új edzés indítása" gombot!</div></div>`
     :recent.map(w=>workoutCard(w)).join('');
   renderCal();
+  renderMuscleHeatmap();
 }
 const muscleColors={'Mell':'#ff6b35','Hát':'#47c4ff','Váll':'#e8ff47','Bicepsz':'#c864ff','Tricepsz':'#ffc832','Láb':'#50dc78','Has':'#ff5078','Egyéb':'#888'};
+const muscleRGB={'Mell':'255,107,53','Hát':'71,196,255','Váll':'232,255,71','Bicepsz':'200,100,255','Tricepsz':'255,200,50','Láb':'80,220,120','Has':'255,80,120','Egyéb':'136,136,136'};
+function renderMuscleHeatmap(){
+  const weekAgo=Date.now()-7*864e5;
+  const weekWorkouts=DB.workouts.filter(w=>w.date>weekAgo);
+  const sets={};
+  weekWorkouts.forEach(w=>w.exercises.forEach(ex=>{
+    const e=DB.exercises.find(x=>x.id===ex.exerciseId);
+    if(e){const g=e.muscle;sets[g]=(sets[g]||0)+ex.sets.length}
+  }));
+  const groups=['Mell','Hát','Váll','Bic.','Tric.','Láb','Has'];
+  const groupKeys=['Mell','Hát','Váll','Bicepsz','Tricepsz','Láb','Has'];
+  const maxSets=Math.max(1,...Object.values(sets));
+  let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <div style="font-family:Syne,sans-serif;font-size:13px;font-weight:700;letter-spacing:-0.01em">Heti izomterhelés</div>
+    <div style="font-size:10px;color:var(--muted);letter-spacing:0.05em;text-transform:uppercase">Elmúlt 7 nap</div>
+  </div>`;
+  html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">';
+  groupKeys.forEach((g,i)=>{
+    const cnt=sets[g]||0;
+    const pct=cnt/maxSets;
+    const rgb=muscleRGB[g]||'136,136,136';
+    const bgAlpha=cnt===0?0.06:(0.12+pct*0.45).toFixed(2);
+    const clr=muscleColors[g]||'#888';
+    html+=`<div style="text-align:center">
+      <div style="aspect-ratio:1;border-radius:10px;background:rgba(${rgb},${bgAlpha});border:1.5px solid ${cnt>0?`rgba(${rgb},0.5)`:'var(--border)'};display:flex;align-items:center;justify-content:center;font-family:Syne,sans-serif;font-size:${cnt>0?15:12}px;font-weight:700;color:${cnt>0?clr:'var(--muted2)'};opacity:${cnt===0?0.5:1}">${cnt>0?cnt:'—'}</div>
+      <div style="font-size:8px;color:${cnt>0?'var(--muted)':'var(--muted2)'};margin-top:4px;font-weight:600;letter-spacing:0.04em">${groups[i]}</div>
+    </div>`;
+  });
+  html+='</div>';
+  const totalSets=Object.values(sets).reduce((a,b)=>a+b,0);
+  html+=`<div style="text-align:center;margin-top:10px;font-size:11px;color:var(--muted)">Összesen <span style="color:var(--accent);font-weight:700">${totalSets}</span> sorozat az elmúlt 7 napban</div>`;
+  document.getElementById('muscle-heatmap').innerHTML=html;
+}
 function workoutMuscleColor(w){
   const freq={};
   w.exercises.forEach(ex=>{const e=DB.exercises.find(x=>x.id===ex.exerciseId);if(e)freq[e.muscle]=(freq[e.muscle]||0)+1});
