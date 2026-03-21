@@ -1362,7 +1362,7 @@ function importData(e){
       if(data.bodyweights) DB.bodyweights=data.bodyweights;
       if(data.templates) DB.templates=data.templates;
       if(data.prs) localStorage.setItem('prs',JSON.stringify(data.prs));
-      renderHome(); showToast('✓ Adatok visszaállítva!');
+      initDefaults(); renderHome(); showToast('✓ Adatok visszaállítva!');
     } catch(err){ showToast('❌ Hibás fájl!') }
   };
   reader.readAsText(file); e.target.value='';
