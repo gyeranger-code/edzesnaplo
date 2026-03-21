@@ -628,6 +628,10 @@ function initDefaults(){
   } else {
     const stored=DB.exercises; let changed=false;
     stored.forEach(e=>{ if(!e.muscles){e.muscles=DEFAULT_MUSCLES[e.name]||[];changed=true} });
+    const existingNames=new Set(stored.map(e=>e.name));
+    defs.forEach(d=>{
+      if(!existingNames.has(d.name)){stored.push({...d,id:uid()});changed=true}
+    });
     if(changed) DB.exercises=stored;
   }
 }
