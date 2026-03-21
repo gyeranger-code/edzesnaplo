@@ -887,8 +887,11 @@ function startNewWorkout(){
 // REST TIMER
 // ════════════════════════════════════════════════
 let timerInterval=null, timerSecs=0;
+const timerAudio=new Audio('./timer-sound.mp3');
+timerAudio.preload='auto';
 function startTimer(s){
   if(timerInterval) clearInterval(timerInterval);
+  timerAudio.play().then(()=>{timerAudio.pause();timerAudio.currentTime=0}).catch(()=>{});
   timerSecs=s; updateTimerDisplay();
   document.getElementById('rest-timer').classList.add('visible');
   timerInterval=setInterval(()=>{
@@ -898,6 +901,7 @@ function startTimer(s){
       clearInterval(timerInterval); timerInterval=null;
       document.getElementById('rest-timer').classList.remove('visible');
       showToast('⏱ Pihenőidő lejárt!');
+      timerAudio.currentTime=0;timerAudio.play().catch(()=>{});
       if(navigator.vibrate) navigator.vibrate([300,100,300]);
     }
   },1000);
