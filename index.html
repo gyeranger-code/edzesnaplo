@@ -35,7 +35,7 @@ html,body{width:100%;min-height:100vh;background:var(--bg);color:var(--text);fon
 .nav-item svg{width:20px;height:20px}
 /* SCREENS */
 .screen{display:none}
-.screen.active{display:block;animation:slideIn 0.25s ease}
+.screen.active{display:block;animation:slideIn 0.25s ease;min-height:calc(100dvh - 88px - env(safe-area-inset-bottom,0px))}
 @keyframes slideIn{from{opacity:0;transform:translateX(var(--slide-dir,30px))}to{opacity:1;transform:translateX(0)}}
 @keyframes slideOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(calc(var(--slide-dir,30px)*-1))}}
 /* HEADERS */
@@ -1661,15 +1661,19 @@ if(!localStorage.getItem('prs_v2_migrated')){
 }
 renderHome();
 
-['screen-progress','screen-templates','screen-exercises'].forEach(id=>{
-  const el=document.getElementById(id);
-  let sx=0;
-  el.addEventListener('touchstart',e=>{sx=e.touches[0].clientX},{passive:true});
-  el.addEventListener('touchend',e=>{
-    const dx=e.changedTouches[0].clientX-sx;
-    if(dx>80&&sx<60) switchScreen('more');
-  },{passive:true});
-});
+let swipeBackStart=null;
+document.addEventListener('touchstart',e=>{
+  if(!['progress','templates','exercises'].includes(currentScreen))return;
+  swipeBackStart={x:e.touches[0].clientX,y:e.touches[0].clientY};
+},{passive:true});
+document.addEventListener('touchend',e=>{
+  if(!swipeBackStart)return;
+  const t=e.changedTouches[0];
+  const dx=t.clientX-swipeBackStart.x,dy=Math.abs(t.clientY-swipeBackStart.y);
+  const edge=Math.max(120,Math.min(200,window.innerWidth*0.38));
+  if(dx>65&&swipeBackStart.x<edge&&dy<100) switchScreen('more');
+  swipeBackStart=null;
+},{passive:true});
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js');
