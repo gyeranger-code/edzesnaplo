@@ -1661,6 +1661,16 @@ if(!localStorage.getItem('prs_v2_migrated')){
 }
 renderHome();
 
+['screen-progress','screen-templates','screen-exercises'].forEach(id=>{
+  const el=document.getElementById(id);
+  let sx=0;
+  el.addEventListener('touchstart',e=>{sx=e.touches[0].clientX},{passive:true});
+  el.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-sx;
+    if(dx>80&&sx<60) switchScreen('more');
+  },{passive:true});
+});
+
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js');
 }
