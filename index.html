@@ -319,7 +319,7 @@ select.input{cursor:pointer}
 <div class="screen" id="screen-templates">
   <div class="page-header"><div class="page-tag">Sablonok</div><div class="page-title">Edzéstervek</div></div>
   <div style="padding:0 16px 12px">
-    <button class="btn btn-primary" onclick="openSaveTemplateModal()">
+    <button class="btn btn-primary" onclick="editingTemplateId=null;openSaveTemplateModal()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Új sablon létrehozása
     </button>
@@ -1328,7 +1328,7 @@ function renderProgress(){ /* legacy compat */ }
 // ════════════════════════════════════════════════
 // TEMPLATES
 // ════════════════════════════════════════════════
-let tplSelected=[];
+let tplSelected=[], editingTemplateId=null;
 function renderTemplates(){
   const temps=DB.templates;
   const cont=document.getElementById('template-list');
@@ -1345,29 +1345,38 @@ function renderTemplates(){
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           Indítás
         </button>
-        <button class="btn btn-secondary btn-sm" onclick="deleteTemplate('${t.id}')">Töröl</button>
+        <button class="btn btn-secondary btn-sm" onclick="editTemplate('${t.id}')">Szerkesztés</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteTemplate('${t.id}')" style="padding:8px 10px">✕</button>
       </div>
     </div>`).join('');
 }
-function openSaveTemplateModal(){
-  tplSelected=[];
-  document.getElementById('template-name-input').value='';
+function openSaveTemplateModal(preselected,preName){
+  tplSelected=preselected||[];
+  document.getElementById('template-name-input').value=preName||'';
   const exs=DB.exercises, groups={};
   exs.forEach(e=>{ (groups[e.muscle]||(groups[e.muscle]=[])).push(e) });
   const order=['Mell','Hát','Váll','Bicepsz','Tricepsz','Láb','Has','Egyéb'];
+  const selIds=new Set(tplSelected.map(s=>s.id));
   let html='';
   order.forEach(m=>{
     if(!groups[m]) return;
     html+=`<div class="pick-group-header">${m}</div>`;
     groups[m].forEach(e=>{
-      html+=`<div class="pick-item" id="tpl-${e.id}" onclick="toggleTpl('${e.id}','${e.name.replace(/'/g,"\\'")}','${e.muscle}')">
+      const sel=selIds.has(e.id);
+      html+=`<div class="pick-item${sel?' selected':''}" id="tpl-${e.id}" onclick="toggleTpl('${e.id}','${e.name.replace(/'/g,"\\'")}','${e.muscle}')">
         <div>${e.name}</div>
-        <svg id="tc-${e.id}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;color:transparent"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg id="tc-${e.id}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;color:${sel?'var(--accent)':'transparent'}"><polyline points="20 6 9 17 4 12"/></svg>
       </div>`;
     });
   });
   document.getElementById('template-ex-picker').innerHTML=html;
   openModal('modal-save-template');
+}
+function editTemplate(id){
+  const t=DB.templates.find(t=>t.id===id);if(!t)return;
+  editingTemplateId=id;
+  const preselected=t.exercises.map(ex=>({id:ex.exerciseId,name:ex.name,muscle:ex.muscle}));
+  openSaveTemplateModal(preselected,t.name);
 }
 function toggleTpl(id,name,muscle){
   const idx=tplSelected.findIndex(e=>e.id===id);
@@ -1379,8 +1388,16 @@ function saveTemplate(){
   if(!name){ showToast('Adj meg egy nevet!'); return }
   if(!tplSelected.length){ showToast('Válassz legalább egy gyakorlatot!'); return }
   const temps=DB.templates;
-  temps.push({id:uid(),name,exercises:tplSelected.map(e=>({exerciseId:e.id,name:e.name,muscle:e.muscle}))});
-  DB.templates=temps; closeModal('modal-save-template'); renderTemplates(); showToast('✓ Sablon mentve!');
+  const exercises=tplSelected.map(e=>({exerciseId:e.id,name:e.name,muscle:e.muscle}));
+  if(editingTemplateId){
+    const idx=temps.findIndex(t=>t.id===editingTemplateId);
+    if(idx!==-1) temps[idx]={...temps[idx],name,exercises};
+    editingTemplateId=null;
+    DB.templates=temps; closeModal('modal-save-template'); renderTemplates(); showToast('✓ Sablon frissítve!');
+  } else {
+    temps.push({id:uid(),name,exercises});
+    DB.templates=temps; closeModal('modal-save-template'); renderTemplates(); showToast('✓ Sablon mentve!');
+  }
 }
 function loadTemplate(id){
   const t=DB.templates.find(t=>t.id===id); if(!t) return;
