@@ -1,4 +1,4 @@
-const CACHE_NAME = 'edzsnaplo-v14';
+const CACHE_NAME = 'edzsnaplo-v15';
 const ASSETS = [
   './',
   './index.html',

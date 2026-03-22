@@ -306,7 +306,10 @@ select.input{cursor:pointer}
 
 <!-- PROGRESS -->
 <div class="screen" id="screen-progress">
-  <div class="page-header"><div class="page-tag">Statisztika</div><div class="page-title">Progresszió</div></div>
+  <div class="page-header">
+    <button onclick="switchScreen('more')" style="background:none;border:none;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;padding:0 0 6px;display:flex;align-items:center;gap:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><polyline points="15 18 9 12 15 6"/></svg>Vissza</button>
+    <div class="page-tag">Statisztika</div><div class="page-title">Progresszió</div>
+  </div>
   <!-- Muscle group tabs -->
   <div id="muscle-tabs" style="display:flex;gap:8px;padding:0 16px 14px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none"></div>
   <!-- Exercise cards for selected muscle group -->
@@ -317,7 +320,10 @@ select.input{cursor:pointer}
 
 <!-- TEMPLATES -->
 <div class="screen" id="screen-templates">
-  <div class="page-header"><div class="page-tag">Sablonok</div><div class="page-title">Edzéstervek</div></div>
+  <div class="page-header">
+    <button onclick="switchScreen('more')" style="background:none;border:none;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;padding:0 0 6px;display:flex;align-items:center;gap:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><polyline points="15 18 9 12 15 6"/></svg>Vissza</button>
+    <div class="page-tag">Sablonok</div><div class="page-title">Edzéstervek</div>
+  </div>
   <div style="padding:0 16px 12px">
     <button class="btn btn-primary" onclick="editingTemplateId=null;openSaveTemplateModal()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -406,7 +412,10 @@ select.input{cursor:pointer}
 
 <!-- EXERCISES -->
 <div class="screen" id="screen-exercises">
-  <div class="page-header"><div class="page-tag">Kezelés</div><div class="page-title">Gyakorlatok</div></div>
+  <div class="page-header">
+    <button onclick="switchScreen('more')" style="background:none;border:none;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;padding:0 0 6px;display:flex;align-items:center;gap:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><polyline points="15 18 9 12 15 6"/></svg>Vissza</button>
+    <div class="page-tag">Kezelés</div><div class="page-title">Gyakorlatok</div>
+  </div>
   <div style="padding:0 16px 12px">
     <button class="btn btn-primary" onclick="openNewExerciseModal()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
