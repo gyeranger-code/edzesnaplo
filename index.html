@@ -15,6 +15,28 @@
 </head>
 <body>
 
+<!-- SPLASH SCREEN -->
+<div id="splash" style="position:fixed;inset:0;z-index:9999;background:#0d0d0d;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease,visibility 0.5s ease">
+  <div style="position:relative;width:72px;height:72px;margin-bottom:24px">
+    <svg viewBox="0 0 72 72" width="72" height="72" style="animation:splashPulse 1.2s ease-in-out infinite">
+      <circle cx="36" cy="36" r="32" fill="none" stroke="#1f1f1f" stroke-width="4"/>
+      <circle cx="36" cy="36" r="32" fill="none" stroke="#e8ff47" stroke-width="4" stroke-dasharray="201" stroke-dashoffset="201" stroke-linecap="round" style="animation:splashDraw 1.5s ease forwards"/>
+      <text x="36" y="42" text-anchor="middle" font-family="Syne,sans-serif" font-size="24" font-weight="800" fill="#e8ff47" style="animation:splashFadeIn 0.6s 0.3s ease both">E</text>
+    </svg>
+  </div>
+  <div style="font-family:Syne,sans-serif;font-size:22px;font-weight:800;letter-spacing:-0.03em;color:#f0f0f0;animation:splashFadeIn 0.6s 0.4s ease both">Edzésnapló</div>
+  <div style="font-size:12px;color:#666;margin-top:6px;letter-spacing:0.1em;text-transform:uppercase;animation:splashFadeIn 0.6s 0.6s ease both">Töltés...</div>
+  <div style="width:120px;height:3px;background:#1f1f1f;border-radius:2px;margin-top:20px;overflow:hidden;animation:splashFadeIn 0.6s 0.5s ease both">
+    <div style="height:100%;background:linear-gradient(90deg,#e8ff47,#47c4ff);border-radius:2px;animation:splashBar 1.2s ease-in-out forwards"></div>
+  </div>
+</div>
+<style>
+@keyframes splashDraw{to{stroke-dashoffset:0}}
+@keyframes splashPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes splashFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes splashBar{0%{width:0}60%{width:70%}100%{width:100%}}
+</style>
+
 <!-- REST TIMER BANNER -->
 <div id="rest-timer">
   <div>

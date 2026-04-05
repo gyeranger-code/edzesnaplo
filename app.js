@@ -1141,6 +1141,12 @@ if(!localStorage.getItem('prs_v2_migrated')){
 }
 renderHome();
 
+// Hide splash screen
+setTimeout(()=>{
+  const splash=document.getElementById('splash');
+  if(splash){splash.style.opacity='0';splash.style.visibility='hidden';setTimeout(()=>splash.remove(),500)}
+},1200);
+
 let swipeBackStart=null;
 document.addEventListener('touchstart',e=>{
   if(!['progress','templates','exercises'].includes(currentScreen))return;
