@@ -33,7 +33,7 @@
 <div class="screen active" id="screen-home">
   <div class="page-header">
     <div class="page-tag">Edzésnapló</div>
-    <div class="page-title" id="home-greeting">Üdv, Gyula! 👋</div>
+    <div class="page-title" id="home-greeting">Üdv! 👋</div>
     <div class="page-sub" id="home-streak"></div>
   </div>
   <div class="today-card">
@@ -162,6 +162,17 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
       Sablonok
     </button>
+  </div>
+
+  <!-- Name setting -->
+  <div style="padding:0 16px 14px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:20px">👤</span>
+      <div style="flex:1">
+        <label class="input-label" style="margin-bottom:4px">Neved</label>
+        <input type="text" class="input" id="username-input" placeholder="Írd be a neved..." oninput="saveUsername(this.value)" style="padding:8px 12px;font-size:14px">
+      </div>
+    </div>
   </div>
 
   <!-- Theme toggle -->

@@ -220,7 +220,8 @@ function renderHome(){
   const h=now.getHours();
   const greet=h<5?'Jó éjt':h<12?'Jó reggelt':h<18?'Szép napot':h<22?'Jó estét':'Jó éjt';
   const emoji=h<5?'🌙':h<12?'☀️':h<18?'💪':h<22?'🌆':'🌙';
-  document.getElementById('home-greeting').textContent=`${greet}, Gyula! ${emoji}`;
+  const userName=localStorage.getItem('username')||'';
+  document.getElementById('home-greeting').textContent=userName?`${greet}, ${userName}! ${emoji}`:`${greet}! ${emoji}`;
   document.getElementById('today-date').textContent=now.toLocaleDateString('hu-HU',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const ws=DB.workouts, weekAgo=Date.now()-7*864e5;
   document.getElementById('stat-week').textContent=ws.filter(w=>w.date>weekAgo).length;
@@ -914,8 +915,10 @@ function initTheme(){
   const saved=localStorage.getItem('theme');
   if(saved==='light'){document.documentElement.classList.add('light');updateThemeUI(true);document.querySelector('meta[name="theme-color"]').content='#f5f5f5'}
 }
+function saveUsername(val){ localStorage.setItem('username',val.trim()) }
 function renderMore(){
   document.getElementById('bw-date').value=today();
+  document.getElementById('username-input').value=localStorage.getItem('username')||'';
   renderBodyweightList(); renderWeeklySummary();
   updateThemeUI(document.documentElement.classList.contains('light'));
 }
