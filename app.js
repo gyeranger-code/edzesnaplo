@@ -1144,13 +1144,12 @@ renderHome();
 // Hide splash screen, show welcome if no name
 setTimeout(()=>{
   const splash=document.getElementById('splash');
-  if(splash){splash.style.opacity='0';splash.style.visibility='hidden';setTimeout(()=>splash.remove(),500)}
-  if(!localStorage.getItem('username')){
-    setTimeout(()=>{
-      const w=document.getElementById('welcome');
-      if(w){w.style.display='flex';document.getElementById('app').style.display='none';document.getElementById('nav').style.display='none'}
-    },500);
+  const needsWelcome=!localStorage.getItem('username');
+  if(needsWelcome){
+    const w=document.getElementById('welcome');
+    if(w){w.style.display='flex';document.getElementById('app').style.display='none';document.getElementById('nav').style.display='none'}
   }
+  if(splash){splash.style.opacity='0';splash.style.visibility='hidden';setTimeout(()=>splash.remove(),500)}
 },1200);
 function submitWelcome(){
   const name=document.getElementById('welcome-name').value.trim();
