@@ -1142,36 +1142,47 @@ if(!localStorage.getItem('prs_v2_migrated')){
 renderHome();
 
 // Hide splash screen, show welcome if no name
-setTimeout(()=>{
-  const splash=document.getElementById('splash');
-  const needsWelcome=!localStorage.getItem('username');
-  if(needsWelcome){
-    const w=document.getElementById('welcome');
-    if(w){w.style.display='flex';document.getElementById('app').style.display='none';document.getElementById('nav').style.display='none'}
-  }
-  if(splash){splash.style.opacity='0';splash.style.visibility='hidden';setTimeout(()=>splash.remove(),500)}
-},1200);
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var splash=document.getElementById('splash');
+    var needsWelcome=!localStorage.getItem('username');
+    if(splash){
+      splash.style.opacity='0';
+      setTimeout(function(){
+        splash.style.display='none';
+        if(needsWelcome){
+          document.getElementById('welcome').style.display='flex';
+          document.getElementById('app').style.display='none';
+          document.getElementById('nav').style.display='none';
+        }
+      },500);
+    }
+  },1200);
+});
 function submitWelcome(){
-  const name=document.getElementById('welcome-name').value.trim();
+  var name=document.getElementById('welcome-name').value.trim();
   if(!name) return;
   localStorage.setItem('username',name);
-  const w=document.getElementById('welcome');
-  w.style.opacity='0';w.style.visibility='hidden';
-  setTimeout(()=>{
-    w.remove();
+  var w=document.getElementById('welcome');
+  w.style.opacity='0';
+  setTimeout(function(){
+    w.style.display='none';
     document.getElementById('app').style.display='';
     document.getElementById('nav').style.display='';
     renderHome();
   },500);
 }
-document.getElementById('welcome-name').addEventListener('input',function(){
-  const btn=document.getElementById('welcome-btn');
-  if(this.value.trim()){btn.disabled=false;btn.style.opacity='1'}
-  else{btn.disabled=true;btn.style.opacity='0.4'}
-});
-document.getElementById('welcome-name').addEventListener('keydown',function(e){
-  if(e.key==='Enter'&&this.value.trim()) submitWelcome();
-});
+var welInput=document.getElementById('welcome-name');
+var welBtn=document.getElementById('welcome-btn');
+if(welInput&&welBtn){
+  welInput.addEventListener('input',function(){
+    if(this.value.trim()){welBtn.disabled=false;welBtn.style.opacity='1'}
+    else{welBtn.disabled=true;welBtn.style.opacity='0.4'}
+  });
+  welInput.addEventListener('keydown',function(e){
+    if(e.key==='Enter'&&this.value.trim()) submitWelcome();
+  });
+}
 
 let swipeBackStart=null;
 document.addEventListener('touchstart',e=>{
