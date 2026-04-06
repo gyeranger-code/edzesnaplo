@@ -37,6 +37,15 @@
 @keyframes splashBar{0%{width:0}60%{width:70%}100%{width:100%}}
 </style>
 
+<!-- WELCOME SCREEN -->
+<div id="welcome" style="position:fixed;inset:0;z-index:9998;background:#0d0d0d;display:none;flex-direction:column;align-items:center;justify-content:center;padding:40px;transition:opacity 0.5s ease,visibility 0.5s ease">
+  <div style="font-size:40px;margin-bottom:16px;animation:splashFadeIn 0.5s 0.1s ease both">💪</div>
+  <div style="font-family:Syne,sans-serif;font-size:26px;font-weight:800;letter-spacing:-0.03em;color:#f0f0f0;margin-bottom:6px;animation:splashFadeIn 0.5s 0.2s ease both">Üdv az Edzésnaplóban!</div>
+  <div style="font-size:14px;color:#666;margin-bottom:32px;animation:splashFadeIn 0.5s 0.3s ease both">Írd be a neved a kezdéshez</div>
+  <input type="text" id="welcome-name" placeholder="A neved..." style="width:100%;max-width:280px;padding:14px 18px;background:#1f1f1f;border:2px solid #2a2a2a;border-radius:12px;color:#f0f0f0;font-family:'DM Sans',sans-serif;font-size:16px;text-align:center;outline:none;transition:border-color 0.2s;animation:splashFadeIn 0.5s 0.4s ease both;-webkit-appearance:none" onfocus="this.style.borderColor='#e8ff47'" onblur="this.style.borderColor='#2a2a2a'">
+  <button id="welcome-btn" onclick="submitWelcome()" disabled style="width:100%;max-width:280px;margin-top:14px;padding:14px;border-radius:12px;border:none;background:#e8ff47;color:#000;font-family:Syne,sans-serif;font-size:15px;font-weight:700;cursor:pointer;opacity:0.4;transition:all 0.2s;animation:splashFadeIn 0.5s 0.5s ease both">Kezdés</button>
+</div>
+
 <!-- REST TIMER BANNER -->
 <div id="rest-timer">
   <div>

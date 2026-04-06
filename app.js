@@ -1141,11 +1141,38 @@ if(!localStorage.getItem('prs_v2_migrated')){
 }
 renderHome();
 
-// Hide splash screen
+// Hide splash screen, show welcome if no name
 setTimeout(()=>{
   const splash=document.getElementById('splash');
   if(splash){splash.style.opacity='0';splash.style.visibility='hidden';setTimeout(()=>splash.remove(),500)}
+  if(!localStorage.getItem('username')){
+    setTimeout(()=>{
+      const w=document.getElementById('welcome');
+      if(w){w.style.display='flex';document.getElementById('app').style.display='none';document.getElementById('nav').style.display='none'}
+    },500);
+  }
 },1200);
+function submitWelcome(){
+  const name=document.getElementById('welcome-name').value.trim();
+  if(!name) return;
+  localStorage.setItem('username',name);
+  const w=document.getElementById('welcome');
+  w.style.opacity='0';w.style.visibility='hidden';
+  setTimeout(()=>{
+    w.remove();
+    document.getElementById('app').style.display='';
+    document.getElementById('nav').style.display='';
+    renderHome();
+  },500);
+}
+document.getElementById('welcome-name').addEventListener('input',function(){
+  const btn=document.getElementById('welcome-btn');
+  if(this.value.trim()){btn.disabled=false;btn.style.opacity='1'}
+  else{btn.disabled=true;btn.style.opacity='0.4'}
+});
+document.getElementById('welcome-name').addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&this.value.trim()) submitWelcome();
+});
 
 let swipeBackStart=null;
 document.addEventListener('touchstart',e=>{
