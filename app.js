@@ -1139,54 +1139,7 @@ if(!localStorage.getItem('prs_v2_migrated')){
   localStorage.setItem('prs',JSON.stringify(prs));
   localStorage.setItem('prs_v2_migrated','1');
 }
-renderHome();
-
-// Startup flow: splash (4s) -> welcome (if needed) -> main app
-document.getElementById('app').style.display='none';
-document.getElementById('nav').style.display='none';
-
-function hideSplash(callback){
-  var splash=document.getElementById('splash');
-  if(splash){
-    splash.style.opacity='0';
-    setTimeout(function(){ splash.style.display='none'; if(callback) callback(); },500);
-  } else { if(callback) callback(); }
-}
-function showApp(){
-  document.getElementById('app').style.display='';
-  document.getElementById('nav').style.display='';
-  renderHome();
-}
-function submitWelcome(){
-  var name=document.getElementById('welcome-name').value.trim();
-  if(!name) return;
-  localStorage.setItem('username',name);
-  var w=document.getElementById('welcome');
-  w.style.opacity='0';
-  setTimeout(function(){ w.style.display='none'; showApp(); },500);
-}
-
-setTimeout(function(){
-  if(localStorage.getItem('username')){
-    hideSplash(showApp);
-  } else {
-    hideSplash(function(){
-      document.getElementById('welcome').style.display='flex';
-    });
-  }
-},4000);
-
-var welInput=document.getElementById('welcome-name');
-var welBtn=document.getElementById('welcome-btn');
-if(welInput&&welBtn){
-  welInput.addEventListener('input',function(){
-    if(this.value.trim()){welBtn.disabled=false;welBtn.style.opacity='1'}
-    else{welBtn.disabled=true;welBtn.style.opacity='0.4'}
-  });
-  welInput.addEventListener('keydown',function(e){
-    if(e.key==='Enter'&&this.value.trim()) submitWelcome();
-  });
-}
+// renderHome called by splash logic in index.html after startup
 
 let swipeBackStart=null;
 document.addEventListener('touchstart',e=>{

@@ -399,6 +399,58 @@
 
 <div id="toast">✓ Mentve!</div>
 
+<script>
+// Splash + Welcome logic — runs independently of app.js
+(function(){
+  var app=document.getElementById('app');
+  var nav=document.getElementById('nav');
+  var splash=document.getElementById('splash');
+  var welcome=document.getElementById('welcome');
+  var welInput=document.getElementById('welcome-name');
+  var welBtn=document.getElementById('welcome-btn');
+
+  // Hide app until ready
+  app.style.display='none';
+  nav.style.display='none';
+
+  function showApp(){
+    app.style.display='';
+    nav.style.display='';
+    try{ renderHome(); }catch(e){ console.error(e); }
+  }
+
+  // After 4s: hide splash, show welcome or app
+  setTimeout(function(){
+    splash.style.opacity='0';
+    setTimeout(function(){
+      splash.style.display='none';
+      if(localStorage.getItem('username')){
+        showApp();
+      } else {
+        welcome.style.display='flex';
+      }
+    },500);
+  },4000);
+
+  // Welcome submit
+  window.submitWelcome=function(){
+    var name=welInput.value.trim();
+    if(!name) return;
+    localStorage.setItem('username',name);
+    welcome.style.opacity='0';
+    setTimeout(function(){ welcome.style.display='none'; showApp(); },500);
+  };
+
+  // Enable/disable button
+  welInput.addEventListener('input',function(){
+    if(this.value.trim()){welBtn.disabled=false;welBtn.style.opacity='1';}
+    else{welBtn.disabled=true;welBtn.style.opacity='0.4';}
+  });
+  welInput.addEventListener('keydown',function(e){
+    if(e.key==='Enter'&&this.value.trim()) window.submitWelcome();
+  });
+})();
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="app.js"></script>
 </body>
