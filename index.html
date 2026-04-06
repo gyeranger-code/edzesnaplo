@@ -399,59 +399,55 @@
 
 <div id="toast">✓ Mentve!</div>
 
-<script>
-// Splash + Welcome logic — runs independently of app.js
-(function(){
-  var app=document.getElementById('app');
-  var nav=document.getElementById('nav');
-  var splash=document.getElementById('splash');
-  var welcome=document.getElementById('welcome');
-  var welInput=document.getElementById('welcome-name');
-  var welBtn=document.getElementById('welcome-btn');
-
-  // Hide app until ready
-  app.style.display='none';
-  nav.style.display='none';
-
-  function showApp(){
-    app.style.display='';
-    nav.style.display='';
-    try{ renderHome(); }catch(e){ console.error(e); }
-  }
-
-  // After 4s: hide splash, show welcome or app
-  setTimeout(function(){
-    splash.style.opacity='0';
-    setTimeout(function(){
-      splash.style.display='none';
-      if(localStorage.getItem('username')){
-        showApp();
-      } else {
-        welcome.style.display='flex';
-      }
-    },500);
-  },4000);
-
-  // Welcome submit
-  window.submitWelcome=function(){
-    var name=welInput.value.trim();
-    if(!name) return;
-    localStorage.setItem('username',name);
-    welcome.style.opacity='0';
-    setTimeout(function(){ welcome.style.display='none'; showApp(); },500);
-  };
-
-  // Enable/disable button
-  welInput.addEventListener('input',function(){
-    if(this.value.trim()){welBtn.disabled=false;welBtn.style.opacity='1';}
-    else{welBtn.disabled=true;welBtn.style.opacity='0.4';}
-  });
-  welInput.addEventListener('keydown',function(e){
-    if(e.key==='Enter'&&this.value.trim()) window.submitWelcome();
-  });
-})();
-</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="app.js"></script>
+<script>
+// Splash + Welcome logic — runs AFTER app.js is fully loaded
+var _app=document.getElementById('app');
+var _nav=document.getElementById('nav');
+var _splash=document.getElementById('splash');
+var _welcome=document.getElementById('welcome');
+
+// Hide app behind splash
+_app.style.visibility='hidden';
+_nav.style.visibility='hidden';
+
+function _showApp(){
+  _app.style.visibility='';
+  _nav.style.visibility='';
+  if(typeof renderHome==='function') renderHome();
+}
+
+function submitWelcome(){
+  var name=document.getElementById('welcome-name').value.trim();
+  if(!name) return;
+  localStorage.setItem('username',name);
+  _welcome.style.opacity='0';
+  setTimeout(function(){ _welcome.style.display='none'; _showApp(); },500);
+}
+
+// After 4s: hide splash
+setTimeout(function(){
+  _splash.style.opacity='0';
+  setTimeout(function(){
+    _splash.style.display='none';
+    if(localStorage.getItem('username')){
+      _showApp();
+    } else {
+      _welcome.style.display='flex';
+    }
+  },500);
+},4000);
+
+// Welcome input handlers
+document.getElementById('welcome-name').addEventListener('input',function(){
+  var btn=document.getElementById('welcome-btn');
+  if(this.value.trim()){btn.disabled=false;btn.style.opacity='1';}
+  else{btn.disabled=true;btn.style.opacity='0.4';}
+});
+document.getElementById('welcome-name').addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&this.value.trim()) submitWelcome();
+});
+</script>
 </body>
 </html>
