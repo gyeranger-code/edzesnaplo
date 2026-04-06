@@ -1141,37 +1141,41 @@ if(!localStorage.getItem('prs_v2_migrated')){
 }
 renderHome();
 
-// Hide splash screen, show welcome if no name
-window.addEventListener('load',function(){
-  setTimeout(function(){
-    var splash=document.getElementById('splash');
-    var needsWelcome=!localStorage.getItem('username');
-    if(splash){
-      splash.style.opacity='0';
-      setTimeout(function(){
-        splash.style.display='none';
-        if(needsWelcome){
-          document.getElementById('welcome').style.display='flex';
-          document.getElementById('app').style.display='none';
-          document.getElementById('nav').style.display='none';
-        }
-      },500);
-    }
-  },1200);
-});
+// Startup flow: splash (4s) -> welcome (if needed) -> main app
+document.getElementById('app').style.display='none';
+document.getElementById('nav').style.display='none';
+
+function hideSplash(callback){
+  var splash=document.getElementById('splash');
+  if(splash){
+    splash.style.opacity='0';
+    setTimeout(function(){ splash.style.display='none'; if(callback) callback(); },500);
+  } else { if(callback) callback(); }
+}
+function showApp(){
+  document.getElementById('app').style.display='';
+  document.getElementById('nav').style.display='';
+  renderHome();
+}
 function submitWelcome(){
   var name=document.getElementById('welcome-name').value.trim();
   if(!name) return;
   localStorage.setItem('username',name);
   var w=document.getElementById('welcome');
   w.style.opacity='0';
-  setTimeout(function(){
-    w.style.display='none';
-    document.getElementById('app').style.display='';
-    document.getElementById('nav').style.display='';
-    renderHome();
-  },500);
+  setTimeout(function(){ w.style.display='none'; showApp(); },500);
 }
+
+setTimeout(function(){
+  if(localStorage.getItem('username')){
+    hideSplash(showApp);
+  } else {
+    hideSplash(function(){
+      document.getElementById('welcome').style.display='flex';
+    });
+  }
+},4000);
+
 var welInput=document.getElementById('welcome-name');
 var welBtn=document.getElementById('welcome-btn');
 if(welInput&&welBtn){
