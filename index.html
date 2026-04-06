@@ -16,7 +16,7 @@
 <body>
 
 <!-- SPLASH SCREEN -->
-<div id="splash" style="position:fixed;inset:0;z-index:9999;background:#0d0d0d;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease,visibility 0.5s ease">
+<div id="splash" style="position:fixed;inset:0;z-index:9999;background:#0d0d0d;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease,visibility 0.5s ease;pointer-events:auto">
   <div style="position:relative;width:72px;height:72px;margin-bottom:24px">
     <svg viewBox="0 0 72 72" width="72" height="72" style="animation:splashPulse 2s ease-in-out infinite">
       <circle cx="36" cy="36" r="32" fill="none" stroke="#1f1f1f" stroke-width="4"/>
@@ -38,7 +38,7 @@
 </style>
 
 <!-- WELCOME SCREEN -->
-<div id="welcome" style="position:fixed;inset:0;z-index:9998;background:#0d0d0d;display:none;flex-direction:column;align-items:center;justify-content:center;padding:40px;transition:opacity 0.5s ease,visibility 0.5s ease">
+<div id="welcome" style="position:fixed;inset:0;z-index:9998;background:#0d0d0d;display:none;flex-direction:column;align-items:center;justify-content:center;padding:40px;transition:opacity 0.5s ease,visibility 0.5s ease;pointer-events:auto">
   <div style="font-size:40px;margin-bottom:16px;animation:splashFadeIn 0.5s 0.1s ease both">💪</div>
   <div style="font-family:Syne,sans-serif;font-size:26px;font-weight:800;letter-spacing:-0.03em;color:#f0f0f0;margin-bottom:6px;animation:splashFadeIn 0.5s 0.2s ease both">Üdv az Edzésnaplóban!</div>
   <div style="font-size:14px;color:#666;margin-bottom:32px;animation:splashFadeIn 0.5s 0.3s ease both">Írd be a neved a kezdéshez</div>
@@ -405,11 +405,14 @@
 // After 4s: remove splash, show welcome if needed
 setTimeout(function(){
   var splash=document.getElementById('splash');
+  splash.style.pointerEvents='none';
   splash.style.opacity='0';
   setTimeout(function(){
-    splash.remove();
+    if(splash.parentNode) splash.remove();
     if(!localStorage.getItem('username')){
-      document.getElementById('welcome').style.display='flex';
+      var wel=document.getElementById('welcome');
+      wel.style.display='flex';
+      wel.style.pointerEvents='auto';
     }
   },500);
 },4000);
@@ -419,8 +422,9 @@ function submitWelcome(){
   if(!name) return;
   localStorage.setItem('username',name);
   var w=document.getElementById('welcome');
+  w.style.pointerEvents='none';
   w.style.opacity='0';
-  setTimeout(function(){ w.remove(); renderHome(); },500);
+  setTimeout(function(){ if(w.parentNode) w.remove(); renderHome(); },500);
 }
 
 document.getElementById('welcome-name').addEventListener('input',function(){
