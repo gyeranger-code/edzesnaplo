@@ -402,44 +402,27 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="app.js"></script>
 <script>
-// Splash + Welcome logic — runs AFTER app.js is fully loaded
-var _app=document.getElementById('app');
-var _nav=document.getElementById('nav');
-var _splash=document.getElementById('splash');
-var _welcome=document.getElementById('welcome');
-
-// Hide app behind splash
-_app.style.visibility='hidden';
-_nav.style.visibility='hidden';
-
-function _showApp(){
-  _app.style.visibility='';
-  _nav.style.visibility='';
-  if(typeof renderHome==='function') renderHome();
-}
+// After 4s: remove splash, show welcome if needed
+setTimeout(function(){
+  var splash=document.getElementById('splash');
+  splash.style.opacity='0';
+  setTimeout(function(){
+    splash.remove();
+    if(!localStorage.getItem('username')){
+      document.getElementById('welcome').style.display='flex';
+    }
+  },500);
+},4000);
 
 function submitWelcome(){
   var name=document.getElementById('welcome-name').value.trim();
   if(!name) return;
   localStorage.setItem('username',name);
-  _welcome.style.opacity='0';
-  setTimeout(function(){ _welcome.style.display='none'; _showApp(); },500);
+  var w=document.getElementById('welcome');
+  w.style.opacity='0';
+  setTimeout(function(){ w.remove(); renderHome(); },500);
 }
 
-// After 4s: hide splash
-setTimeout(function(){
-  _splash.style.opacity='0';
-  setTimeout(function(){
-    _splash.style.display='none';
-    if(localStorage.getItem('username')){
-      _showApp();
-    } else {
-      _welcome.style.display='flex';
-    }
-  },500);
-},4000);
-
-// Welcome input handlers
 document.getElementById('welcome-name').addEventListener('input',function(){
   var btn=document.getElementById('welcome-btn');
   if(this.value.trim()){btn.disabled=false;btn.style.opacity='1';}

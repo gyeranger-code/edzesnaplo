@@ -1139,7 +1139,7 @@ if(!localStorage.getItem('prs_v2_migrated')){
   localStorage.setItem('prs',JSON.stringify(prs));
   localStorage.setItem('prs_v2_migrated','1');
 }
-// renderHome called by splash logic in index.html after startup
+renderHome();
 
 let swipeBackStart=null;
 document.addEventListener('touchstart',e=>{
