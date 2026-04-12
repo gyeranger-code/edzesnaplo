@@ -244,6 +244,18 @@
   <div class="section-header"><div class="section-title">📊 Heti összefoglaló</div></div>
   <div id="weekly-summary"></div>
 
+  <!-- Monthly report -->
+  <div class="section-header"><div class="section-title">📅 Havi riport</div></div>
+  <div id="monthly-report"></div>
+
+  <!-- Workout frequency trend -->
+  <div class="section-header"><div class="section-title">📈 Edzésgyakoriság trend</div></div>
+  <div class="card" style="margin:0 16px 12px"><div style="height:160px"><canvas id="freq-chart"></canvas></div></div>
+
+  <!-- PR history -->
+  <div class="section-header"><div class="section-title">🏆 PR történet</div></div>
+  <div id="pr-history"></div>
+
   <!-- Export -->
   <div class="section-header"><div class="section-title">💾 Adatok kezelése</div></div>
   <div class="export-row" onclick="exportData()">
@@ -400,6 +412,7 @@
 <div id="toast">✓ Mentve!</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script src="app.js"></script>
 <script>
 // After 4s: remove splash, show welcome if needed

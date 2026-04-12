@@ -896,7 +896,7 @@ function deleteTemplate(id){ DB.templates=DB.templates.filter(t=>t.id!==id); ren
 // ════════════════════════════════════════════════
 // MORE: BODYWEIGHT + WEEKLY + EXPORT
 // ════════════════════════════════════════════════
-let bwChart=null;
+let bwChart=null, freqChart=null;
 function toggleTheme(){
   const isLight=document.documentElement.classList.toggle('light');
   localStorage.setItem('theme',isLight?'light':'dark');
@@ -920,6 +920,7 @@ function renderMore(){
   document.getElementById('bw-date').value=today();
   document.getElementById('username-input').value=localStorage.getItem('username')||'';
   renderBodyweightList(); renderWeeklySummary();
+  renderMonthlyReport(); renderFreqTrend(); renderPRHistory();
   updateThemeUI(document.documentElement.classList.contains('light'));
 }
 function addBodyweight(){
@@ -992,6 +993,137 @@ function renderWeeklySummary(){
     </div>`).join('')}
     ${neglected.length?`<div style="margin-top:12px;padding:10px 14px;background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.2);border-radius:8px;font-size:13px;color:#ff6b35">⚠️ <b>Elhanyagolt:</b> ${neglected.join(', ')}</div>`:'<div style="margin-top:10px;padding:10px 14px;background:rgba(76,175,80,0.1);border:1px solid rgba(76,175,80,0.2);border-radius:8px;font-size:13px;color:var(--safe)">✅ Minden izomcsoport edzetted!</div>'}
   </div>`;
+}
+
+// ════════════════════════════════════════════════
+// MONTHLY REPORT
+// ════════════════════════════════════════════════
+function renderMonthlyReport(){
+  const cont=document.getElementById('monthly-report'); if(!cont) return;
+  const now=new Date();
+  const y=now.getFullYear(), m=now.getMonth();
+  const first=new Date(y,m,1).getTime(), last=new Date(y,m+1,0,23,59,59).getTime();
+  const ws=DB.workouts.filter(w=>w.date>=first&&w.date<=last);
+  const monthName=now.toLocaleDateString('hu-HU',{year:'numeric',month:'long'});
+  if(!ws.length){
+    cont.innerHTML=`<div class="card" style="margin:0 16px 12px"><div style="text-align:center;padding:10px 0;color:var(--muted);font-size:13px">${monthName}: még nincs edzés</div></div>`;
+    return;
+  }
+  const totalSets=ws.reduce((a,w)=>a+w.exercises.reduce((b,e)=>b+e.sets.length,0),0);
+  const totalVol=ws.reduce((a,w)=>a+w.exercises.reduce((b,e)=>b+e.sets.reduce((c,s)=>c+(s.weight||0)*(s.reps||0),0),0),0);
+  const mc={};
+  ws.forEach(w=>w.exercises.forEach(e=>{ mc[e.muscle]=(mc[e.muscle]||0)+1 }));
+  const prs=getPRs();
+  const topPRs=[];
+  ws.forEach(w=>w.exercises.forEach(ex=>{
+    const est=bestEpley(ex.sets);
+    if(est>0&&prs[ex.exerciseId]&&Math.abs(est-prs[ex.exerciseId])<0.5){
+      const eDef=DB.exercises.find(e=>e.id===ex.exerciseId);
+      if(eDef) topPRs.push({name:eDef.name,val:est});
+    }
+  }));
+  const uniquePRs=[...new Map(topPRs.map(p=>[p.name,p])).values()].slice(0,5);
+  const avgDur=ws.filter(w=>w.startTime&&w.endTime).map(w=>Math.round((w.endTime-w.startTime)/60000));
+  const avgDurMin=avgDur.length?Math.round(avgDur.reduce((a,b)=>a+b,0)/avgDur.length):0;
+  const maxM=Math.max(...Object.values(mc));
+  cont.innerHTML=`<div class="card" style="margin:0 16px 12px">
+    <div style="font-family:Syne,sans-serif;font-size:14px;font-weight:800;margin-bottom:14px;color:var(--accent)">${monthName}</div>
+    <div style="display:flex;justify-content:space-around;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+      <div style="text-align:center"><div style="font-family:Syne,sans-serif;font-size:22px;font-weight:800;color:var(--accent)">${ws.length}</div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">Edzés</div></div>
+      <div style="text-align:center"><div style="font-family:Syne,sans-serif;font-size:22px;font-weight:800">${totalSets}</div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">Sorozat</div></div>
+      <div style="text-align:center"><div style="font-family:Syne,sans-serif;font-size:22px;font-weight:800">${(totalVol/1000).toFixed(1)}</div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">Tonna</div></div>
+      ${avgDurMin?`<div style="text-align:center"><div style="font-family:Syne,sans-serif;font-size:22px;font-weight:800">${avgDurMin}'</div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">Átlag idő</div></div>`:''}
+    </div>
+    <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Izomcsoportok</div>
+    ${Object.keys(mc).map(m=>`<div class="muscle-bar-row">
+      <div class="muscle-bar-label">${m}</div>
+      <div class="muscle-bar-track"><div class="muscle-bar-fill" style="width:${Math.round(mc[m]/maxM*100)}%"></div></div>
+      <div class="muscle-bar-count">${mc[m]}×</div>
+    </div>`).join('')}
+    ${uniquePRs.length?`<div style="margin-top:14px;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Havi PR-ek 🏆</div>${uniquePRs.map(p=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span>${p.name}</span><span style="font-weight:700;color:var(--accent)">${p.val} kg</span></div>`).join('')}`:''}
+  </div>`;
+}
+
+// ════════════════════════════════════════════════
+// WORKOUT FREQUENCY TREND
+// ════════════════════════════════════════════════
+function renderFreqTrend(){
+  const canvas=document.getElementById('freq-chart'); if(!canvas) return;
+  const weeks=12;
+  const now=new Date();
+  const labels=[], counts=[];
+  for(let i=weeks-1;i>=0;i--){
+    const wEnd=new Date(now); wEnd.setDate(wEnd.getDate()-i*7);
+    const wStart=new Date(wEnd); wStart.setDate(wStart.getDate()-6);
+    wStart.setHours(0,0,0,0); wEnd.setHours(23,59,59,999);
+    const cnt=DB.workouts.filter(w=>w.date>=wStart.getTime()&&w.date<=wEnd.getTime()).length;
+    const lbl=`${wStart.toLocaleDateString('hu-HU',{month:'short',day:'numeric'})}`;
+    labels.push(lbl); counts.push(cnt);
+  }
+  if(freqChart) freqChart.destroy();
+  const base={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1f1f1f',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,titleColor:'#e8ff47',bodyColor:'#f0f0f0',padding:10,cornerRadius:8,callbacks:{label:ctx=>`${ctx.raw} edzés`}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#666',font:{size:9},maxTicksLimit:6}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#666',font:{size:10},stepSize:1},beginAtZero:true}}};
+  freqChart=new Chart(canvas,{type:'bar',data:{labels,datasets:[{data:counts,backgroundColor:'rgba(232,255,71,0.25)',borderColor:'#e8ff47',borderWidth:1.5,borderRadius:6}]},options:base});
+}
+
+// ════════════════════════════════════════════════
+// PR HISTORY
+// ════════════════════════════════════════════════
+function renderPRHistory(){
+  const cont=document.getElementById('pr-history'); if(!cont) return;
+  const exercises=DB.exercises;
+  const workouts=DB.workouts.slice().sort((a,b)=>a.date-b.date);
+  if(!workouts.length){ cont.innerHTML=`<div class="card" style="margin:0 16px 12px"><div style="text-align:center;padding:10px 0;color:var(--muted);font-size:13px">Még nincs edzés adat</div></div>`; return }
+  const prTimeline={};
+  workouts.forEach(w=>{
+    w.exercises.forEach(ex=>{
+      const est=bestEpley(ex.sets);
+      if(est<=0) return;
+      if(!prTimeline[ex.exerciseId]) prTimeline[ex.exerciseId]=[];
+      const prev=prTimeline[ex.exerciseId];
+      const prevBest=prev.length?prev[prev.length-1].val:0;
+      if(est>prevBest) prev.push({date:w.date,val:est});
+    });
+  });
+  const entries=Object.entries(prTimeline).filter(([,h])=>h.length>=2);
+  if(!entries.length){
+    cont.innerHTML=`<div class="card" style="margin:0 16px 12px"><div style="text-align:center;padding:10px 0;color:var(--muted);font-size:13px">Még nincs elegendő PR adat</div></div>`;
+    return;
+  }
+  entries.sort((a,b)=>b[1].length-a[1].length);
+  const top=entries.slice(0,5);
+  const colors=['#e8ff47','#47c4ff','#ff6b9d','#76ff7a','#ffb347'];
+  let html='<div class="card" style="margin:0 16px 12px"><div style="height:200px"><canvas id="pr-hist-chart"></canvas></div></div>';
+  html+=`<div style="padding:0 16px;margin-bottom:12px">`;
+  top.forEach(([eid,hist],ci)=>{
+    const eDef=exercises.find(e=>e.id===eid);
+    const name=eDef?eDef.name:eid;
+    const first=hist[0].val, last=hist[hist.length-1].val;
+    const diff=Math.round((last-first)/first*100);
+    html+=`<div class="card" style="margin-bottom:8px;padding:12px 14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:10px;height:10px;border-radius:50%;background:${colors[ci]}"></div>
+          <div style="font-size:13px;font-weight:700">${name}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:13px;color:var(--muted)">${first} → <b style="color:var(--fg)">${last}</b> kg</span>
+          <span style="font-size:12px;font-weight:700;color:${diff>=0?'var(--safe)':'var(--danger)'}">${diff>=0?'+':''}${diff}%</span>
+        </div>
+      </div>
+    </div>`;
+  });
+  html+='</div>';
+  cont.innerHTML=html;
+  setTimeout(()=>{
+    const canvas=document.getElementById('pr-hist-chart'); if(!canvas) return;
+    const datasets=top.map(([eid,hist],ci)=>{
+      const eDef=exercises.find(e=>e.id===eid);
+      return {label:eDef?eDef.name:eid,data:hist.map(h=>({x:h.date,y:h.val})),borderColor:colors[ci],backgroundColor:colors[ci]+'22',borderWidth:2,tension:0.3,pointRadius:3,pointBackgroundColor:colors[ci],fill:false};
+    });
+    const base={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'#999',font:{size:10},boxWidth:10,padding:8}},tooltip:{backgroundColor:'#1f1f1f',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,titleColor:'#e8ff47',bodyColor:'#f0f0f0',padding:10,cornerRadius:8,callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw.y} kg`,title:ctx=>{const d=new Date(ctx[0].raw.x);return d.toLocaleDateString('hu-HU',{year:'numeric',month:'short',day:'numeric'})}}}},scales:{x:{type:'time',time:{unit:'month',tooltipFormat:'yyyy. MMM dd.',displayFormats:{month:'MMM'}},grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#666',font:{size:10}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#666',font:{size:10}}}}};
+    if(typeof prHistChartInst!=='undefined'&&prHistChartInst) prHistChartInst.destroy();
+    window.prHistChartInst=new Chart(canvas,{type:'line',data:{datasets},options:base});
+  },50);
 }
 
 // ════════════════════════════════════════════════
