@@ -554,7 +554,8 @@ function renderExerciseBlocks(){
 
 let exerciseSortable=null;
 function initExerciseSortable(){
-  const cont=document.getElementById('exercise-blocks'); if(!cont||typeof Sortable==='undefined') return;
+  const cont=document.getElementById('exercise-blocks');
+  if(!cont||typeof Sortable==='undefined') return;
   if(exerciseSortable){ try{exerciseSortable.destroy()}catch(e){} }
   exerciseSortable=new Sortable(cont,{
     animation:160,
@@ -1281,7 +1282,7 @@ function renderProgressModalContent(){
     let badge='', body='';
     if(it.status==='new'){
       badge=`<span class="progress-ex-badge progress-badge-new">ÚJ</span>`;
-      body=`<div class="progress-ex-row"><span>Most: <b style="color:var(--fg)">${it.curSet?.weight||0} kg × ${it.curSet?.reps||0}</b> (~${it.curBest} kg 1RM)</span>${badge}</div>`;
+      body=`<div class="progress-ex-row"><span>Most: <b style="color:var(--text)">${it.curSet?.weight||0} kg × ${it.curSet?.reps||0}</b> (~${it.curBest} kg 1RM)</span>${badge}</div>`;
     } else {
       const prevDate=new Date(it.prevDate).toLocaleDateString('hu-HU',{month:'short',day:'numeric'});
       let cls='progress-badge-same', sym='➡️';
@@ -1290,8 +1291,8 @@ function renderProgressModalContent(){
       badge=`<span class="progress-ex-badge ${cls}">${sym} ${it.diff>=0?'+':''}${it.diff}%</span>`;
       body=`<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
         <div style="flex:1;font-size:12px;color:var(--muted);line-height:1.6">
-          <div>Előző (${prevDate}): <span style="color:var(--fg)">${it.prevSet?.weight||0} kg × ${it.prevSet?.reps||0}</span> <span style="opacity:0.6">(~${it.prevBest} 1RM)</span></div>
-          <div>Most: <span style="color:var(--fg)"><b>${it.curSet?.weight||0} kg × ${it.curSet?.reps||0}</b></span> <span style="opacity:0.6">(~${it.curBest} 1RM)</span></div>
+          <div>Előző (${prevDate}): <span style="color:var(--text)">${it.prevSet?.weight||0} kg × ${it.prevSet?.reps||0}</span> <span style="opacity:0.6">(~${it.prevBest} 1RM)</span></div>
+          <div>Most: <span style="color:var(--text)"><b>${it.curSet?.weight||0} kg × ${it.curSet?.reps||0}</b></span> <span style="opacity:0.6">(~${it.curBest} 1RM)</span></div>
         </div>
         ${badge}
       </div>`;
@@ -1415,7 +1416,7 @@ function renderPRHistory(){
           <div style="font-size:13px;font-weight:700">${name}</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:13px;color:var(--muted)">${first} → <b style="color:var(--fg)">${last}</b> kg</span>
+          <span style="font-size:13px;color:var(--muted)">${first} → <b style="color:var(--text)">${last}</b> kg</span>
           <span style="font-size:12px;font-weight:700;color:${diff>=0?'var(--safe)':'var(--danger)'}">${diff>=0?'+':''}${diff}%</span>
         </div>
       </div>
