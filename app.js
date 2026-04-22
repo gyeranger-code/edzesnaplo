@@ -164,7 +164,108 @@ function switchScreen(name){
   else if(name==='more') renderMore();
   else if(name==='exercises'){ const s=document.getElementById('exercise-list-search'); if(s) s.value=''; renderExerciseList(); }
   else if(name==='log') renderLogScreen();
+  if(name==='log') requestWakeLock();
+  else releaseWakeLock();
 }
+
+// ════════════════════════════════════════════════
+// WAKE LOCK (képernyő ébren tartása edzés közben)
+// ════════════════════════════════════════════════
+let wakeLockSentinel=null;
+async function requestWakeLock(){
+  if(!('wakeLock' in navigator)) return;
+  try{
+    if(wakeLockSentinel) return;
+    wakeLockSentinel=await navigator.wakeLock.request('screen');
+    wakeLockSentinel.addEventListener('release',()=>{ wakeLockSentinel=null });
+  }catch(e){ /* silent */ }
+}
+async function releaseWakeLock(){
+  if(!wakeLockSentinel) return;
+  try{ await wakeLockSentinel.release() }catch(e){}
+  wakeLockSentinel=null;
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&currentScreen==='log') requestWakeLock();
+});
+
+// ════════════════════════════════════════════════
+// PULL TO REFRESH (főoldalon)
+// ════════════════════════════════════════════════
+(function initPullToRefresh(){
+  let startY=0,pulling=false,distance=0,refreshing=false;
+  const threshold=70;
+  const maxPull=120;
+  function getIndicator(){ return document.getElementById('pull-indicator') }
+  function getHome(){ return document.getElementById('screen-home') }
+  document.addEventListener('touchstart',e=>{
+    if(currentScreen!=='home') return;
+    if(window.scrollY>2) return;
+    if(refreshing) return;
+    const t=e.touches[0];
+    startY=t.clientY; pulling=true; distance=0;
+  },{passive:true});
+  document.addEventListener('touchmove',e=>{
+    if(!pulling||currentScreen!=='home'||refreshing) return;
+    const dy=e.touches[0].clientY-startY;
+    if(dy<=0){ pulling=false; resetIndicator(); return }
+    if(window.scrollY>2){ pulling=false; resetIndicator(); return }
+    distance=Math.min(maxPull,dy*0.6);
+    const ind=getIndicator(); const home=getHome();
+    if(!ind||!home) return;
+    ind.classList.add('visible');
+    home.style.transform=`translateY(${distance}px)`;
+    ind.style.transform=`translateY(${distance}px)`;
+    if(distance>=threshold){
+      ind.classList.add('ready');
+      ind.querySelector('.pull-text').textContent='Engedd el';
+    } else {
+      ind.classList.remove('ready');
+      ind.querySelector('.pull-text').textContent='Húzd lejjebb';
+    }
+  },{passive:true});
+  document.addEventListener('touchend',()=>{
+    if(!pulling||currentScreen!=='home') return;
+    pulling=false;
+    if(distance>=threshold&&!refreshing) doRefresh();
+    else resetIndicator();
+  });
+  function resetIndicator(){
+    const ind=getIndicator(); const home=getHome();
+    if(!ind||!home) return;
+    home.style.transition='transform 0.25s';
+    ind.style.transition='transform 0.25s';
+    home.style.transform='';
+    ind.style.transform='';
+    ind.classList.remove('visible','ready');
+    setTimeout(()=>{
+      home.style.transition='';
+      ind.style.transition='';
+    },260);
+  }
+  function doRefresh(){
+    refreshing=true;
+    const ind=getIndicator(); const home=getHome();
+    if(!ind||!home){ refreshing=false; return }
+    ind.classList.add('refreshing');
+    ind.querySelector('.pull-text').textContent='Frissítés...';
+    const fixY=60;
+    home.style.transition='transform 0.2s';
+    ind.style.transition='transform 0.2s';
+    home.style.transform=`translateY(${fixY}px)`;
+    ind.style.transform=`translateY(${fixY}px)`;
+    haptic(20);
+    setTimeout(()=>{
+      try{ renderHome() }catch(e){}
+      showToast('✓ Frissítve');
+      setTimeout(()=>{
+        ind.classList.remove('refreshing');
+        resetIndicator();
+        refreshing=false;
+      },300);
+    },500);
+  }
+})();
 
 // ════════════════════════════════════════════════
 // HOME
@@ -229,7 +330,7 @@ function renderHome(){
   const prVals=Object.values(getPRs());
   const maxPR=prVals.length?Math.max(...prVals):0;
   document.getElementById('stat-maxpr').textContent=maxPR>0?maxPR+' kg':'—';
-  document.getElementById('stat-pr').textContent=Object.keys(getPRs()).length;
+  renderProgressStat();
   const streak=calcStreak(ws);
   document.getElementById('home-streak').textContent=getStreakMessage(streak);
   const todayStart=new Date(); todayStart.setHours(0,0,0,0);
@@ -428,9 +529,12 @@ function renderExerciseBlocks(){
   }
   document.getElementById('save-btn').style.display='flex';
   cont.innerHTML=currentExercises.map((ex,i)=>`
-    <div class="exercise-block">
+    <div class="exercise-block" data-idx="${i}">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
-        <div><div class="exercise-block-name">${ex.name}</div><div class="exercise-block-muscle">${ex.muscle}</div></div>
+        <div style="display:flex;align-items:flex-start;gap:8px">
+          <span class="drag-dot" title="Fogd és húzd">☰</span>
+          <div><div class="exercise-block-name">${ex.name}</div><div class="exercise-block-muscle">${ex.muscle}</div></div>
+        </div>
         <button class="btn btn-danger btn-sm" onclick="removeExercise(${i})">Töröl</button>
       </div>
       <div class="set-header"><span></span><span>Súly (kg)</span><span>Ismétlés</span><span>RPE</span><span></span></div>
@@ -445,6 +549,31 @@ function renderExerciseBlocks(){
       </div>`).join('')}
       <button class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addSet(${i})">+ Sorozat</button>
     </div>`).join('');
+  initExerciseSortable();
+}
+
+let exerciseSortable=null;
+function initExerciseSortable(){
+  const cont=document.getElementById('exercise-blocks'); if(!cont||typeof Sortable==='undefined') return;
+  if(exerciseSortable){ try{exerciseSortable.destroy()}catch(e){} }
+  exerciseSortable=new Sortable(cont,{
+    animation:160,
+    delay:400,
+    delayOnTouchOnly:true,
+    touchStartThreshold:5,
+    filter:'input, button, .set-delete',
+    preventOnFilter:false,
+    chosenClass:'dragging-chosen',
+    ghostClass:'dragging-ghost',
+    onStart:()=>{ haptic(20) },
+    onEnd:(evt)=>{
+      if(evt.oldIndex===evt.newIndex) return;
+      const [moved]=currentExercises.splice(evt.oldIndex,1);
+      currentExercises.splice(evt.newIndex,0,moved);
+      haptic(15);
+      renderExerciseBlocks();
+    }
+  });
 }
 function updateSet(i,j,f,v){ currentExercises[i].sets[j][f]=parseFloat(v)||0 }
 function addSet(i){ const l=currentExercises[i].sets.slice(-1)[0]; currentExercises[i].sets.push({weight:l?.weight||0,reps:l?.reps||0}); renderExerciseBlocks() }
@@ -851,7 +980,39 @@ function openSaveTemplateModal(preselected,preName){
     });
   });
   document.getElementById('template-ex-picker').innerHTML=html;
+  renderTplOrder();
   openModal('modal-save-template');
+}
+let tplSortable=null;
+function renderTplOrder(){
+  const wrap=document.getElementById('tpl-order-wrap');
+  const cont=document.getElementById('template-ex-order');
+  if(!wrap||!cont) return;
+  if(!tplSelected.length){ wrap.style.display='none'; cont.innerHTML=''; return }
+  wrap.style.display='block';
+  cont.innerHTML=tplSelected.map((e,i)=>`<div class="tpl-order-item" data-idx="${i}">
+    <span class="drag-dot">☰</span>
+    <div style="flex:1"><div style="font-size:13px;font-weight:600">${e.name}</div><div style="font-size:11px;color:var(--muted)">${e.muscle}</div></div>
+    <span style="font-size:11px;color:var(--muted);font-weight:700">${i+1}</span>
+  </div>`).join('');
+  if(typeof Sortable==='undefined') return;
+  if(tplSortable){ try{tplSortable.destroy()}catch(e){} }
+  tplSortable=new Sortable(cont,{
+    animation:160,
+    delay:350,
+    delayOnTouchOnly:true,
+    touchStartThreshold:5,
+    chosenClass:'dragging-chosen',
+    ghostClass:'dragging-ghost',
+    onStart:()=>haptic(20),
+    onEnd:(evt)=>{
+      if(evt.oldIndex===evt.newIndex) return;
+      const [moved]=tplSelected.splice(evt.oldIndex,1);
+      tplSelected.splice(evt.newIndex,0,moved);
+      haptic(15);
+      renderTplOrder();
+    }
+  });
 }
 function editTemplate(id){
   const t=DB.templates.find(t=>t.id===id);if(!t)return;
@@ -863,6 +1024,7 @@ function toggleTpl(id,name,muscle){
   const idx=tplSelected.findIndex(e=>e.id===id);
   if(idx===-1){ tplSelected.push({id,name,muscle}); document.getElementById(`tpl-${id}`).classList.add('selected'); document.getElementById(`tc-${id}`).style.color='var(--accent)' }
   else{ tplSelected.splice(idx,1); document.getElementById(`tpl-${id}`).classList.remove('selected'); document.getElementById(`tc-${id}`).style.color='transparent' }
+  renderTplOrder();
 }
 function saveTemplate(){
   const name=document.getElementById('template-name-input').value.trim();
@@ -993,6 +1155,153 @@ function renderWeeklySummary(){
     </div>`).join('')}
     ${neglected.length?`<div style="margin-top:12px;padding:10px 14px;background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.2);border-radius:8px;font-size:13px;color:#ff6b35">⚠️ <b>Elhanyagolt:</b> ${neglected.join(', ')}</div>`:'<div style="margin-top:10px;padding:10px 14px;background:rgba(76,175,80,0.1);border:1px solid rgba(76,175,80,0.2);border-radius:8px;font-size:13px;color:var(--safe)">✅ Minden izomcsoport edzetted!</div>'}
   </div>`;
+}
+
+// ════════════════════════════════════════════════
+// PROGRESS COMPARISON (utolsó edzés vs. előző)
+// ════════════════════════════════════════════════
+// A főoldali kártyán: átlagos 1RM fejlődés az utolsó edzés gyakorlatainál
+// vs. az egyes gyakorlatok előző előfordulása.
+function computeProgress(rangeKey){
+  const workouts=DB.workouts.slice().sort((a,b)=>b.date-a.date);
+  if(workouts.length<2) return {items:[],avg:null,last:workouts[0]||null};
+  const last=workouts[0];
+  let compareCutoff=null;
+  const now=Date.now();
+  if(rangeKey==='week') compareCutoff=now-7*864e5;
+  else if(rangeKey==='month') compareCutoff=now-30*864e5;
+  else if(rangeKey==='half') compareCutoff=now-182*864e5;
+  else if(rangeKey==='year') compareCutoff=now-365*864e5;
+  const items=[];
+  last.exercises.forEach(ex=>{
+    const curBest=bestEpley(ex.sets);
+    if(curBest<=0) return;
+    const eDef=DB.exercises.find(e=>e.id===ex.exerciseId);
+    const name=eDef?eDef.name:'Ismeretlen';
+    const curSet=ex.sets.reduce((best,s)=>{
+      const v=epley(s.weight||0,s.reps||1);
+      return v>(best?best.v:0)?{...s,v}:best;
+    },null);
+    let prev=null;
+    if(rangeKey==='prev'){
+      for(let i=1;i<workouts.length;i++){
+        const w=workouts[i];
+        const found=w.exercises.find(e=>e.exerciseId===ex.exerciseId);
+        if(found){ prev={w,ex:found}; break }
+      }
+    } else {
+      let prevBest=null;
+      for(let i=1;i<workouts.length;i++){
+        const w=workouts[i];
+        if(w.date<compareCutoff) break;
+        const found=w.exercises.find(e=>e.exerciseId===ex.exerciseId);
+        if(found){
+          const b=bestEpley(found.sets);
+          if(!prevBest||b>prevBest.best){ prevBest={w,ex:found,best:b} }
+        }
+      }
+      prev=prevBest;
+    }
+    if(!prev){
+      items.push({name,status:'new',curBest,curSet});
+      return;
+    }
+    const prevBest=bestEpley(prev.ex.sets);
+    const prevSet=prev.ex.sets.reduce((best,s)=>{
+      const v=epley(s.weight||0,s.reps||1);
+      return v>(best?best.v:0)?{...s,v}:best;
+    },null);
+    const diff=prevBest>0?((curBest-prevBest)/prevBest*100):0;
+    const status=Math.abs(diff)<0.5?'same':(diff>0?'up':'down');
+    items.push({name,status,curBest,prevBest,curSet,prevSet,diff:Math.round(diff*10)/10,prevDate:prev.w.date});
+  });
+  const withDiff=items.filter(i=>i.status!=='new');
+  const avg=withDiff.length?Math.round(withDiff.reduce((a,b)=>a+b.diff,0)/withDiff.length*10)/10:null;
+  return {items,avg,last};
+}
+
+function renderProgressStat(){
+  const el=document.getElementById('stat-progress'); if(!el) return;
+  const p=computeProgress('prev');
+  if(p.avg===null){
+    el.textContent='—';
+    el.style.color='var(--muted)';
+    return;
+  }
+  el.textContent=(p.avg>=0?'+':'')+p.avg+'%';
+  if(p.avg>0.5) el.style.color='var(--safe)';
+  else if(p.avg<-0.5) el.style.color='var(--danger)';
+  else el.style.color='var(--pr)';
+}
+
+let currentProgressRange='prev';
+function openProgressModal(){
+  haptic(10);
+  currentProgressRange='prev';
+  document.querySelectorAll('.progress-tab').forEach(t=>t.classList.toggle('active',t.dataset.range==='prev'));
+  renderProgressModalContent();
+  openModal('modal-progress');
+}
+function selectProgressRange(r){
+  haptic(10);
+  currentProgressRange=r;
+  document.querySelectorAll('.progress-tab').forEach(t=>t.classList.toggle('active',t.dataset.range===r));
+  renderProgressModalContent();
+}
+function renderProgressModalContent(){
+  const cont=document.getElementById('progress-modal-content'); if(!cont) return;
+  const p=computeProgress(currentProgressRange);
+  if(!p.last){
+    cont.innerHTML=`<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Még nincs edzés adat.</div>`;
+    return;
+  }
+  if(!p.items.length){
+    cont.innerHTML=`<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Nincs összehasonlítható adat.</div>`;
+    return;
+  }
+  const rangeLabels={prev:'Az előző alkalomhoz képest',week:'Az elmúlt 1 hét legjobbjához képest',month:'Az elmúlt 1 hónap legjobbjához képest',half:'Az elmúlt 6 hónap legjobbjához képest',year:'Az elmúlt 1 év legjobbjához képest'};
+  const lastDate=new Date(p.last.date).toLocaleDateString('hu-HU',{year:'numeric',month:'short',day:'numeric'});
+  let html='';
+  if(p.avg!==null){
+    const color=p.avg>0.5?'var(--safe)':(p.avg<-0.5?'var(--danger)':'var(--pr)');
+    const emoji=p.avg>0.5?'📈':(p.avg<-0.5?'📉':'➡️');
+    html+=`<div class="progress-summary">
+      <div class="progress-summary-val" style="color:${color}">${emoji} ${p.avg>=0?'+':''}${p.avg}%</div>
+      <div class="progress-summary-label">Átlagos 1RM fejlődés</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">${rangeLabels[currentProgressRange]}</div>
+    </div>`;
+  } else {
+    html+=`<div class="progress-summary">
+      <div class="progress-summary-val" style="color:var(--accent3)">✨ Új</div>
+      <div class="progress-summary-label">Minden gyakorlat új ebben a tartományban</div>
+    </div>`;
+  }
+  html+=`<div style="font-size:11px;color:var(--muted);margin-bottom:10px;text-align:center">Utolsó edzés: ${lastDate}</div>`;
+  p.items.forEach(it=>{
+    let badge='', body='';
+    if(it.status==='new'){
+      badge=`<span class="progress-ex-badge progress-badge-new">ÚJ</span>`;
+      body=`<div class="progress-ex-row"><span>Most: <b style="color:var(--fg)">${it.curSet?.weight||0} kg × ${it.curSet?.reps||0}</b> (~${it.curBest} kg 1RM)</span>${badge}</div>`;
+    } else {
+      const prevDate=new Date(it.prevDate).toLocaleDateString('hu-HU',{month:'short',day:'numeric'});
+      let cls='progress-badge-same', sym='➡️';
+      if(it.status==='up'){ cls='progress-badge-up'; sym='✓' }
+      else if(it.status==='down'){ cls='progress-badge-down'; sym='↓' }
+      badge=`<span class="progress-ex-badge ${cls}">${sym} ${it.diff>=0?'+':''}${it.diff}%</span>`;
+      body=`<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div style="flex:1;font-size:12px;color:var(--muted);line-height:1.6">
+          <div>Előző (${prevDate}): <span style="color:var(--fg)">${it.prevSet?.weight||0} kg × ${it.prevSet?.reps||0}</span> <span style="opacity:0.6">(~${it.prevBest} 1RM)</span></div>
+          <div>Most: <span style="color:var(--fg)"><b>${it.curSet?.weight||0} kg × ${it.curSet?.reps||0}</b></span> <span style="opacity:0.6">(~${it.curBest} 1RM)</span></div>
+        </div>
+        ${badge}
+      </div>`;
+    }
+    html+=`<div class="progress-ex-card">
+      <div class="progress-ex-name">${it.name}</div>
+      ${body}
+    </div>`;
+  });
+  cont.innerHTML=html;
 }
 
 // ════════════════════════════════════════════════

@@ -95,6 +95,36 @@ select.input{cursor:pointer}
 .prev-session{background:rgba(71,196,255,0.08);border:1px solid rgba(71,196,255,0.15);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:12px}
 .prev-title{font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent3);margin-bottom:5px}
 .prev-sets{font-size:13px;color:var(--muted);line-height:1.7}
+/* PULL TO REFRESH */
+#pull-indicator{position:absolute;top:-60px;left:0;right:0;height:60px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;pointer-events:none;opacity:0;transition:opacity 0.2s}
+#pull-indicator.visible{opacity:1}
+#pull-indicator .pull-spinner{font-size:22px;color:var(--accent);line-height:1;transition:transform 0.15s}
+#pull-indicator.ready .pull-spinner{color:var(--accent)}
+#pull-indicator.refreshing .pull-spinner{animation:spinPull 0.8s linear infinite}
+@keyframes spinPull{to{transform:rotate(360deg)}}
+#screen-home{position:relative}
+/* DRAG AND DROP */
+.drag-dot{display:inline-block;color:var(--muted);font-size:16px;opacity:0.5;user-select:none;-webkit-user-select:none;line-height:1;padding-top:2px}
+.dragging-chosen{transform:scale(1.02);box-shadow:0 8px 24px rgba(0,0,0,0.5);opacity:0.95;z-index:10}
+.dragging-ghost{opacity:0.35;background:rgba(232,255,71,0.06) !important;border:1.5px dashed var(--accent) !important}
+.tpl-order-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--surface2);cursor:grab}
+.tpl-order-item:last-child{border-bottom:none}
+.tpl-order-item:active{cursor:grabbing}
+/* PROGRESS MODAL */
+.progress-tabs{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+.progress-tab{flex:0 0 auto;padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:100px;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all 0.2s}
+.progress-tab.active{background:var(--accent);color:#000;border-color:var(--accent)}
+.progress-summary{background:linear-gradient(135deg,var(--surface2) 0%,rgba(232,255,71,0.05) 100%);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px;text-align:center}
+.progress-summary-val{font-family:'Syne',sans-serif;font-size:34px;font-weight:800;letter-spacing:-0.02em;line-height:1}
+.progress-summary-label{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-top:6px;font-weight:700}
+.progress-ex-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px}
+.progress-ex-name{font-size:13px;font-weight:700;margin-bottom:6px;font-family:'Syne',sans-serif}
+.progress-ex-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);line-height:1.5}
+.progress-ex-badge{font-size:12px;font-weight:800;padding:3px 10px;border-radius:100px;font-family:'Syne',sans-serif}
+.progress-badge-up{background:rgba(76,175,80,0.15);color:var(--safe)}
+.progress-badge-down{background:rgba(244,67,54,0.15);color:var(--danger)}
+.progress-badge-same{background:rgba(255,215,0,0.15);color:var(--pr)}
+.progress-badge-new{background:rgba(71,196,255,0.15);color:var(--accent3)}
 /* TOAST */
 #toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--accent);color:#000;padding:12px 20px;border-radius:100px;font-size:13px;font-weight:700;z-index:300;transition:transform 0.3s ease;white-space:nowrap;pointer-events:none}
 #toast.show{transform:translateX(-50%) translateY(0)}
